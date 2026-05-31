@@ -13,6 +13,7 @@ import {
 	Clock,
 	CreditCard,
 	Database,
+	FileClock,
 	Folder,
 	Forward,
 	GalleryVerticalEnd,
@@ -305,6 +306,14 @@ const MENU: Menu = {
 			url: "/dashboard/settings/users",
 			// Only enabled for users with member.read permission
 			isEnabled: ({ permissions }) => !!permissions?.member.read,
+		},
+		{
+			isSingle: true,
+			title: "Audit Logs",
+			icon: FileClock,
+			url: "/dashboard/settings/audit-logs",
+			// Owner/admin only (auditLog.read resolves true only for them)
+			isEnabled: ({ permissions }) => !!permissions?.auditLog.read,
 		},
 		{
 			isSingle: true,

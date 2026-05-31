@@ -44,51 +44,62 @@ export const auditLogRelations = relations(auditLog, ({ one }) => ({
 export type AuditLog = typeof auditLog.$inferSelect;
 export type NewAuditLog = typeof auditLog.$inferInsert;
 
-export type AuditAction =
-	| "create"
-	| "update"
-	| "delete"
-	| "deploy"
-	| "cancel"
-	| "redeploy"
-	| "login"
-	| "logout"
-	| "restore"
-	| "run"
-	| "start"
-	| "stop"
-	| "reload"
-	| "rebuild"
-	| "move";
+/**
+ * Single source of truth for audit actions/resource types. The derived union
+ * types feed the service/typing layer; the const arrays feed runtime
+ * validation (e.g. the tRPC reader's zod enums) so the two can never drift.
+ */
+export const auditActions = [
+	"create",
+	"update",
+	"delete",
+	"deploy",
+	"cancel",
+	"redeploy",
+	"login",
+	"logout",
+	"restore",
+	"run",
+	"start",
+	"stop",
+	"reload",
+	"rebuild",
+	"move",
+] as const;
 
-export type AuditResourceType =
-	| "project"
-	| "service"
-	| "environment"
-	| "deployment"
-	| "user"
-	| "customRole"
-	| "domain"
-	| "certificate"
-	| "registry"
-	| "server"
-	| "sshKey"
-	| "gitProvider"
-	| "destination"
-	| "notification"
-	| "settings"
-	| "session"
-	| "port"
-	| "redirect"
-	| "security"
-	| "schedule"
-	| "backup"
-	| "volumeBackup"
-	| "docker"
-	| "swarm"
-	| "previewDeployment"
-	| "organization"
-	| "cluster"
-	| "mount"
-	| "application"
-	| "compose";
+export const auditResourceTypes = [
+	"project",
+	"service",
+	"environment",
+	"deployment",
+	"user",
+	"customRole",
+	"domain",
+	"certificate",
+	"registry",
+	"server",
+	"sshKey",
+	"gitProvider",
+	"destination",
+	"notification",
+	"settings",
+	"session",
+	"port",
+	"redirect",
+	"security",
+	"schedule",
+	"backup",
+	"volumeBackup",
+	"docker",
+	"swarm",
+	"previewDeployment",
+	"organization",
+	"cluster",
+	"mount",
+	"application",
+	"compose",
+] as const;
+
+export type AuditAction = (typeof auditActions)[number];
+
+export type AuditResourceType = (typeof auditResourceTypes)[number];
