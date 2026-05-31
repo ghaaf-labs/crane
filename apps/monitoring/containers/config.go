@@ -15,15 +15,8 @@ func LoadConfig() error {
 		ExcludeServices: make([]string, len(cfg.Containers.Services.Exclude)),
 	}
 
-	// Convert Include services
-	for i, svc := range cfg.Containers.Services.Include {
-		monitorConfig.IncludeServices[i] = svc
-	}
-
-	// Convert Exclude services
-	for i, appName := range cfg.Containers.Services.Exclude {
-		monitorConfig.ExcludeServices[i] = appName
-	}
+	copy(monitorConfig.IncludeServices, cfg.Containers.Services.Include)
+	copy(monitorConfig.ExcludeServices, cfg.Containers.Services.Exclude)
 
 	return nil
 }
