@@ -12,10 +12,6 @@ export default defineConfig({
 	define: {
 		"process.env": {
 			NODE: "test",
-			GITHUB_CLIENT_ID: "test",
-			GITHUB_CLIENT_SECRET: "test",
-			GOOGLE_CLIENT_ID: "test",
-			GOOGLE_CLIENT_SECRET: "test",
 		},
 	},
 	plugins: [

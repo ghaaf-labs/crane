@@ -1,8 +1,4 @@
-import {
-	getWebServerSettings,
-	IS_CLOUD,
-	isAdminPresent,
-} from "@dokploy/server";
+import { IS_CLOUD, isAdminPresent } from "@dokploy/server";
 import { validateRequest } from "@dokploy/server/lib/auth";
 import { standardSchemaResolver as zodResolver } from "@hookform/resolvers/standard-schema";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
@@ -52,7 +48,6 @@ type LoginForm = z.infer<typeof LoginSchema>;
 
 interface Props {
 	IS_CLOUD: boolean;
-	enforceSSO: boolean;
 }
 export default function Home({ IS_CLOUD }: Props) {
 	const router = useRouter();
@@ -409,7 +404,6 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 		return {
 			props: {
 				IS_CLOUD: IS_CLOUD,
-				enforceSSO: false,
 			},
 		};
 	}
@@ -435,12 +429,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 		};
 	}
 
-	const webServerSettings = await getWebServerSettings();
-
 	return {
 		props: {
 			hasAdmin,
-			enforceSSO: webServerSettings?.enforceSSO ?? false,
 		},
 	};
 }
