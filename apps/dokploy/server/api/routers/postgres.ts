@@ -444,7 +444,7 @@ export const postgresRouter = createTRPCRouter({
 					echo "No running container found for ${appName}" >&2
 					exit 1
 				fi
-				docker exec "$CONTAINER_ID" psql -U ${databaseUser} -c "ALTER USER \\"${databaseUser}\\" WITH PASSWORD '${password}';"
+				docker exec "$CONTAINER_ID" psql -U "${databaseUser}" -c "ALTER USER \\"${databaseUser}\\" WITH PASSWORD '${password}';"
 			`;
 
 			await db.transaction(async (tx) => {
