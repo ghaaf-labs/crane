@@ -1,0 +1,578 @@
+{
+  "$comment": "Machine-readable execution spec for relicensing crane (Dokploy fork) to Apache-2.0 by deleting all /proprietary code and neutralizing the license gate (no feature ungating). Line numbers verified against the working tree; deleting lines shifts later ones, so apply top-to-bottom per file or anchor on the 'anchor' string. Decisions: relocate audit-log service (always-on), stub use-whitelabeling, keep enterpriseOnlyResources Set, keep isEnterpriseCloud + Stripe + better-auth sso() plugin + ssoProvider table dormant.",
+  "deletions": [
+    "/Users/malivix/Documents/ghaaf/crane/packages/server/src/services/proprietary",
+    "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/routers/proprietary",
+    "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/components/proprietary",
+    "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/utils/enterprise.ts",
+    "/Users/malivix/Documents/ghaaf/crane/packages/server/src/utils/crons/enterprise.ts",
+    "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/dashboard/settings/license.tsx",
+    "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/dashboard/settings/sso.tsx",
+    "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/dashboard/settings/whitelabeling.tsx",
+    "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/dashboard/settings/audit-logs.tsx",
+    "/Users/malivix/Documents/ghaaf/crane/packages/server/auth-schema2.ts",
+    "/Users/malivix/Documents/ghaaf/crane/LICENSE_PROPRIETARY.md"
+  ],
+  "edits": [
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/services/audit-log.ts",
+      "anchor": "NEW FILE (relocated from packages/server/src/services/proprietary/audit-log.ts)",
+      "action": "create",
+      "before": "",
+      "after": "Copy the deleted proprietary/audit-log.ts verbatim EXCEPT: (1) delete the import line `import { hasValidLicense } from \"@dokploy/server/services/proprietary/license-key\";`, and (2) inside createAuditLog delete the two lines `const licensed = await hasValidLicense(input.organizationId);` and `if (!licensed) return;`. Keep db insert into auditLog, getAuditLogs, CreateAuditLogInput, GetAuditLogsInput, and `export type { AuditAction, AuditResourceType };`. Result: audit logging is always-on Apache code.",
+      "note": "Decision A: relocate + ungate the audit logger to avoid editing ~38 router callers + 2 auth.ts hooks."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/index.ts",
+      "anchor": "export * from \"./services/proprietary/license-key\";",
+      "action": "delete-line",
+      "before": "export * from \"./services/proprietary/license-key\";",
+      "after": "",
+      "note": "Barrel line 38. hasValidLicense no longer needed from the barrel after the gate is removed."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/index.ts",
+      "anchor": "export * from \"./services/proprietary/sso\";",
+      "action": "delete-line",
+      "before": "export * from \"./services/proprietary/sso\";",
+      "after": "",
+      "note": "Barrel line 39. No surviving non-proprietary consumer of the sso helpers."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/index.ts",
+      "anchor": "export * from \"./utils/crons/enterprise\";",
+      "action": "delete-line",
+      "before": "export * from \"./utils/crons/enterprise\";",
+      "after": "",
+      "note": "Barrel line 89. The license-server polling cron module is deleted."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/index.ts",
+      "anchor": "export * from \"./services/project\";",
+      "action": "insert-after",
+      "before": "export * from \"./services/project\";",
+      "after": "export * from \"./services/audit-log\";",
+      "note": "Optional: re-export the relocated audit-log service from the barrel. audit.ts/auth.ts import by direct path so this is tidiness, not strictly required."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/services/permission.ts",
+      "anchor": "import { hasValidLicense } from \"@dokploy/server/services/proprietary/license-key\";",
+      "action": "delete-line",
+      "before": "import { hasValidLicense } from \"@dokploy/server/services/proprietary/license-key\";",
+      "after": "",
+      "note": "Line 3."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/services/permission.ts",
+      "anchor": "resolveRole body after the staticRoles guard (lines ~46-72)",
+      "action": "replace-block",
+      "before": "\tconst licensed = await hasValidLicense(organizationId);\n\tif (!licensed) {\n\t\treturn null;\n\t}\n\n\tconst customRoles = await db.query.organizationRole.findMany({\n\t\twhere: and(\n\t\t\teq(organizationRole.organizationId, organizationId),\n\t\t\teq(organizationRole.role, roleName),\n\t\t),\n\t});\n\n\tif (customRoles.length === 0) {\n\t\treturn null;\n\t}\n\n\tconst merged: Record<string, string[]> = {};\n\tfor (const entry of customRoles) {\n\t\tconst parsed = JSON.parse(entry.permission) as Record<string, string[]>;\n\t\tfor (const [resource, actions] of Object.entries(parsed)) {\n\t\t\tmerged[resource] = [\n\t\t\t\t...new Set([...(merged[resource] ?? []), ...actions]),\n\t\t\t];\n\t\t}\n\t}\n\n\treturn ac.newRole(merged as any);",
+      "after": "\treturn null;",
+      "note": "SAFER variant: custom-role creation is removed, so any non-static role resolves to null (= old unlicensed behavior). Avoids granting legacy custom-role perms without a license check. Also drop the now-unused `organizationRole` import (line 2) and `and`/`eq` if unused elsewhere — verify with rg before removing."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/services/permission.ts",
+      "anchor": "enterpriseOnlyResources.has(r) at line ~87 and isPrivilegedRole && enterpriseOnlyResources.has(resource) at line ~194",
+      "action": "keep",
+      "before": "(no change)",
+      "after": "(no change)",
+      "note": "KEEP decision: enterpriseOnlyResources Set stays in access-control.ts; the two bypass usages here are harmless for static roles. Do not alter observable owner/admin/member behavior."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/services/git-provider.ts",
+      "anchor": "import { hasValidLicense } from \"@dokploy/server/services/proprietary/license-key\";",
+      "action": "delete-line",
+      "before": "import { hasValidLicense } from \"@dokploy/server/services/proprietary/license-key\";",
+      "after": "",
+      "note": "Line 3."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/services/git-provider.ts",
+      "anchor": "const licensed = await hasValidLicense(activeOrganizationId);\n\tconst assignedSet = licensed",
+      "action": "replace-block",
+      "before": "\tconst licensed = await hasValidLicense(activeOrganizationId);\n\tconst assignedSet = licensed\n\t\t? new Set(memberRecord?.accessedGitProviders ?? [])\n\t\t: new Set<string>();",
+      "after": "\tconst assignedSet = new Set<string>();",
+      "note": "In getAccessibleGitProviderIds. Preserves unlicensed behavior: members see own + org-shared providers only. Keep the for-loop below unchanged."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/services/server.ts",
+      "anchor": "import { hasValidLicense } from \"@dokploy/server/services/proprietary/license-key\";",
+      "action": "delete-line",
+      "before": "import { hasValidLicense } from \"@dokploy/server/services/proprietary/license-key\";",
+      "after": "",
+      "note": "Line 8."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/services/server.ts",
+      "anchor": "const licensed = await hasValidLicense(activeOrganizationId);\n\n\tif (!licensed) {",
+      "action": "replace-block",
+      "before": "\tconst licensed = await hasValidLicense(activeOrganizationId);\n\n\tif (!licensed) {\n\t\treturn new Set(allOrgServers.map((s) => s.serverId));\n\t}\n\n\treturn new Set(memberRecord?.accessedServers ?? []);",
+      "after": "\treturn new Set(allOrgServers.map((s) => s.serverId));",
+      "note": "In getAccessibleServerIds. Preserves unlicensed behavior: no per-server restriction (full org access). NOTE this is inverted vs git-provider by design."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/lib/auth.ts",
+      "anchor": "import { createAuditLog } from \"../services/proprietary/audit-log\";",
+      "action": "replace-line",
+      "before": "import { createAuditLog } from \"../services/proprietary/audit-log\";",
+      "after": "import { createAuditLog } from \"../services/audit-log\";",
+      "note": "Line 18. Repoint to the relocated always-on service. The two hooks at 317/341 are unchanged."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/lib/auth.ts",
+      "anchor": "enableEnterpriseFeatures: {\n\t\t\t\ttype: \"boolean\",",
+      "action": "replace-block",
+      "before": "\t\t\tenableEnterpriseFeatures: {\n\t\t\t\ttype: \"boolean\",\n\t\t\t\trequired: false,\n\t\t\t\tinput: false,\n\t\t\t},\n\t\t\tisValidEnterpriseLicense: {\n\t\t\t\ttype: \"boolean\",\n\t\t\t\trequired: false,\n\t\t\t\tinput: false,\n\t\t\t},",
+      "after": "",
+      "note": "Lines ~384-393. Remove the two enterprise additionalFields from user.additionalFields so generate:drizzle emits a clean schema."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/lib/auth.ts",
+      "anchor": "enableEnterpriseFeatures: userFromDb.enableEnterpriseFeatures,\n\t\t\t\t\tisValidEnterpriseLicense: userFromDb.isValidEnterpriseLicense,",
+      "action": "replace-block",
+      "before": "\t\t\t\t\tenableEnterpriseFeatures: userFromDb.enableEnterpriseFeatures,\n\t\t\t\t\tisValidEnterpriseLicense: userFromDb.isValidEnterpriseLicense,",
+      "after": "",
+      "note": "Lines ~514-515. API-key mock-session user object enrichment."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/lib/auth.ts",
+      "anchor": "session.user.enableEnterpriseFeatures =\n\t\t\tmember?.user.enableEnterpriseFeatures || false;",
+      "action": "replace-block",
+      "before": "\t\tsession.user.enableEnterpriseFeatures =\n\t\t\tmember?.user.enableEnterpriseFeatures || false;\n\t\tsession.user.isValidEnterpriseLicense =\n\t\t\tmember?.user.isValidEnterpriseLicense || false;",
+      "after": "",
+      "note": "Lines ~564-567. Normal session enrichment."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/lib/auth.ts",
+      "anchor": "import { sso } from \"@better-auth/sso\"; (line 3), sso() plugin (line 401), isSSORequest branch (lines 254-277), ssoProvider lookup (lines 261-262)",
+      "action": "keep",
+      "before": "(no change)",
+      "after": "(no change)",
+      "note": "KEEP DORMANT decision: SSO will be rebuilt in Rust later. Do not touch the better-auth sso() plugin, its import, the isSSORequest org-provisioning branch, or schema/sso.ts. Only the proprietary SSO router + UI are removed."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/trpc.ts",
+      "anchor": "import { hasValidLicense } from \"@dokploy/server/index\";",
+      "action": "delete-line",
+      "before": "import { hasValidLicense } from \"@dokploy/server/index\";",
+      "after": "",
+      "note": "Line 12. HIDDEN barrel import (no 'proprietary' in the line) that powered enterpriseProcedure."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/trpc.ts",
+      "anchor": "export const enterpriseProcedure = t.procedure.use(async ({ ctx, next }) => {",
+      "action": "replace-block",
+      "before": "/**\n * Requires admin/owner role AND enterprise enabled with a license key in DB.\n * Does NOT call the license server on every request; full validation (haveValidLicenseKey)\n * is used in the UI gate and when activating/validating keys.\n */\nexport const enterpriseProcedure = t.procedure.use(async ({ ctx, next }) => {\n\tif (\n\t\t!ctx.session ||\n\t\t!ctx.user ||\n\t\t(ctx.user.role !== \"owner\" && ctx.user.role !== \"admin\")\n\t) {\n\t\tthrow new TRPCError({ code: \"UNAUTHORIZED\" });\n\t}\n\n\tconst hasValidLicenseResult = await hasValidLicense(\n\t\tctx.session.activeOrganizationId,\n\t);\n\n\tif (!hasValidLicenseResult) {\n\t\tthrow new TRPCError({\n\t\t\tcode: \"FORBIDDEN\",\n\t\t\tmessage: \"Valid enterprise license required\",\n\t\t});\n\t}\n\n\treturn next({\n\t\tctx: {\n\t\t\tsession: ctx.session,\n\t\t\tuser: ctx.user,\n\t\t},\n\t});\n});",
+      "after": "",
+      "note": "Lines ~211-242 incl. the doc comment. Delete the whole enterpriseProcedure. Its two non-proprietary callers in settings.ts switch to adminProcedure (subsumes the owner/admin role check)."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/trpc.ts",
+      "anchor": "enableEnterpriseFeatures: boolean;\n\t\t\t\tisValidEnterpriseLicense: boolean;",
+      "action": "replace-block",
+      "before": "\t\t\t\tenableEnterpriseFeatures: boolean;\n\t\t\t\tisValidEnterpriseLicense: boolean;",
+      "after": "",
+      "note": "Lines 39-40 inside the CreateContextOptions session-user type literal."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/utils/audit.ts",
+      "anchor": "import { createAuditLog } from \"@dokploy/server/services/proprietary/audit-log\";",
+      "action": "replace-line",
+      "before": "import { createAuditLog } from \"@dokploy/server/services/proprietary/audit-log\";",
+      "after": "import { createAuditLog } from \"@dokploy/server/services/audit-log\";",
+      "note": "Line 2. Repoint the audit() helper to the relocated service. DO NOT delete audit() — ~38 routers import it."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/root.ts",
+      "anchor": "import { auditLogRouter } from \"./routers/proprietary/audit-log\";",
+      "action": "replace-block",
+      "before": "import { auditLogRouter } from \"./routers/proprietary/audit-log\";\nimport { customRoleRouter } from \"./routers/proprietary/custom-role\";\nimport { licenseKeyRouter } from \"./routers/proprietary/license-key\";\nimport { ssoRouter } from \"./routers/proprietary/sso\";\nimport { whitelabelingRouter } from \"./routers/proprietary/whitelabeling\";",
+      "after": "",
+      "note": "Import lines 31-35."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/root.ts",
+      "anchor": "\tlicenseKey: licenseKeyRouter,\n\tsso: ssoRouter,",
+      "action": "replace-block",
+      "before": "\tlicenseKey: licenseKeyRouter,\n\tsso: ssoRouter,\n\twhitelabeling: whitelabelingRouter,\n\tcustomRole: customRoleRouter,\n\tauditLog: auditLogRouter,",
+      "after": "",
+      "note": "Registration lines 94-98. Removes the five tRPC routes; api.licenseKey/sso/whitelabeling/customRole/auditLog client calls are removed at their UI sites."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/routers/settings.ts",
+      "anchor": "\tenterpriseProcedure,",
+      "action": "delete-line",
+      "before": "\tenterpriseProcedure,",
+      "after": "",
+      "note": "Line 80 in the ../trpc import list. adminProcedure already imported at line 78."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/routers/settings.ts",
+      "anchor": "\tupdateRemoteServersOnly: enterpriseProcedure",
+      "action": "replace-line",
+      "before": "\tupdateRemoteServersOnly: enterpriseProcedure",
+      "after": "\tupdateRemoteServersOnly: adminProcedure",
+      "note": "Line 449. remoteServersOnly is a real self-hosted setting; endpoint stays fully working."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/routers/settings.ts",
+      "anchor": "\tupdateEnforceSSO: enterpriseProcedure",
+      "action": "replace-line",
+      "before": "\tupdateEnforceSSO: enterpriseProcedure",
+      "after": "\tupdateEnforceSSO: adminProcedure",
+      "note": "Line 471. enforceSSO column + endpoint kept for the future Rust SSO rebuild."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/routers/settings.ts",
+      "anchor": "OpenAPI router allowlist array (lines ~717-721)",
+      "action": "replace-block",
+      "before": "\t\t\t\t\t\"auditLog\",\n\t\t\t\t\t\"customRole\",\n\t\t\t\t\t\"whitelabeling\",\n\t\t\t\t\t\"sso\",\n\t\t\t\t\t\"licenseKey\",",
+      "after": "",
+      "note": "Remove the 5 removed-router names from the OpenAPI path allowlist so doc-gen doesn't reference unregistered routers."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/routers/git-provider.ts",
+      "anchor": "import { hasValidLicense } from \"@dokploy/server/services/proprietary/license-key\";",
+      "action": "delete-line",
+      "before": "import { hasValidLicense } from \"@dokploy/server/services/proprietary/license-key\";",
+      "after": "",
+      "note": "Line 8."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/routers/git-provider.ts",
+      "anchor": "allForPermissions: withPermission(\"member\", \"update\")\n\t\t.use(async ({ ctx, next }) => {",
+      "action": "replace-block",
+      "before": "allForPermissions: withPermission(\"member\", \"update\")\n\t\t.use(async ({ ctx, next }) => {\n\t\t\tconst licensed = await hasValidLicense(ctx.session.activeOrganizationId); ... (full .use middleware block, ~lines 76-85, ending at the closing `})` before `.query(`)",
+      "after": "allForPermissions: withPermission(\"member\", \"update\")",
+      "note": "Read lines 75-90 in full before editing. Remove the entire .use(...) license-gate middleware, leaving withPermission(...).query(...). Endpoint stays functional; its UI consumer (add-permissions.tsx assignment field) is being removed."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/routers/server.ts",
+      "anchor": "import { hasValidLicense } from \"@dokploy/server/services/proprietary/license-key\";",
+      "action": "delete-line",
+      "before": "import { hasValidLicense } from \"@dokploy/server/services/proprietary/license-key\";",
+      "after": "",
+      "note": "Line 20."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/routers/server.ts",
+      "anchor": "allForPermissions: withPermission(\"member\", \"update\")\n\t\t.use(async ({ ctx, next }) => {",
+      "action": "replace-block",
+      "before": "allForPermissions: withPermission(\"member\", \"update\")\n\t\t.use(async ({ ctx, next }) => {\n\t\t\tconst licensed = await hasValidLicense(ctx.session.activeOrganizationId); ... (full .use middleware block, ~lines 133-141)",
+      "after": "allForPermissions: withPermission(\"member\", \"update\")",
+      "note": "Read lines 132-145 in full before editing. Remove the entire .use(...) license-gate middleware."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/routers/user.ts",
+      "anchor": "import { hasValidLicense } from \"@dokploy/server/services/proprietary/license-key\";",
+      "action": "delete-line",
+      "before": "import { hasValidLicense } from \"@dokploy/server/services/proprietary/license-key\";",
+      "after": "",
+      "note": "Line 33."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/api/routers/user.ts",
+      "anchor": "assignPermissions mutation: destructure (line ~361), licensed lookup (~363-365), conditional accessed* spreads (~371-376)",
+      "action": "replace-block",
+      "before": "const { id, accessedGitProviders, accessedServers, ...rest } = input;\n ... const licensed = await hasValidLicense(...); ... await db.update(member).set({ ...rest, ...(licensed && accessedGitProviders !== undefined ? { accessedGitProviders } : {}), ...(licensed && accessedServers !== undefined ? { accessedServers } : {}) }).where(...)",
+      "after": "const { id, ...rest } = input;\n ... await db.update(member).set({ ...rest }).where(...)",
+      "note": "Read lines 346-385 in full. Drop accessedGitProviders/accessedServers from the destructure, delete the hasValidLicense lookup, and remove the two conditional spreads. Per-user assignment is a removed feature. If the input zod schema still declares accessedGitProviders/accessedServers, leaving them is harmless (ignored)."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/server.ts",
+      "anchor": "\tinitEnterpriseBackupCronJobs,",
+      "action": "delete-line",
+      "before": "\tinitEnterpriseBackupCronJobs,",
+      "after": "",
+      "note": "Line 9 in the @dokploy/server import."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/server/server.ts",
+      "anchor": "\t\tawait initEnterpriseBackupCronJobs();",
+      "action": "delete-line",
+      "before": "\t\tawait initEnterpriseBackupCronJobs();",
+      "after": "",
+      "note": "Line 70 startup call. License-server polling cron is removed."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/_app.tsx",
+      "anchor": "import { WhitelabelingProvider } from \"@/components/proprietary/whitelabeling/whitelabeling-provider\";",
+      "action": "delete-line",
+      "before": "import { WhitelabelingProvider } from \"@/components/proprietary/whitelabeling/whitelabeling-provider\";",
+      "after": "",
+      "note": "Line 11."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/_app.tsx",
+      "anchor": "<WhitelabelingProvider />",
+      "action": "delete-line",
+      "before": "\t\t\t\t<WhitelabelingProvider />",
+      "after": "",
+      "note": "Render at line 52."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/index.tsx",
+      "anchor": "import { SignInWithGithub } from \"@/components/proprietary/auth/sign-in-with-github\";",
+      "action": "replace-block",
+      "before": "import { SignInWithGithub } from \"@/components/proprietary/auth/sign-in-with-github\";\nimport { SignInWithGoogle } from \"@/components/proprietary/auth/sign-in-with-google\";\nimport { SignInWithSSO } from \"@/components/proprietary/sso/sign-in-with-sso\";",
+      "after": "",
+      "note": "Imports lines 17-19. useWhitelabelingPublic import (line 44) stays — hook is stubbed."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/index.tsx",
+      "anchor": "const { data: showSignInWithSSO } = api.sso.showSignInWithSSO.useQuery();",
+      "action": "delete-line",
+      "before": "\tconst { data: showSignInWithSSO } = api.sso.showSignInWithSSO.useQuery();",
+      "after": "",
+      "note": "Line 64. Removes the dangling api.sso client call and the showSignInWithSSO variable."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/index.tsx",
+      "anchor": "{IS_CLOUD && <SignInWithGithub />}\n\t\t\t{IS_CLOUD && <SignInWithGoogle />}",
+      "action": "replace-block",
+      "before": "\t\t\t{IS_CLOUD && <SignInWithGithub />}\n\t\t\t{IS_CLOUD && <SignInWithGoogle />}",
+      "after": "",
+      "note": "Lines 181-182. OAuth buttons removed (rebuilt in Rust later)."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/index.tsx",
+      "anchor": "{enforceSSO ? (\n\t\t\t\t\t\t<SignInWithSSO enforce />",
+      "action": "replace-block",
+      "before": "{enforceSSO ? (\n\t\t\t\t\t\t<SignInWithSSO enforce />\n\t\t\t\t\t) : showSignInWithSSO ? (\n\t\t\t\t\t\t<SignInWithSSO>{loginContent}</SignInWithSSO>\n\t\t\t\t\t) : (\n\t\t\t\t\t\tloginContent\n\t\t\t\t\t)}",
+      "after": "{loginContent}",
+      "note": "Lines ~254-262. Read the full ternary before editing. FLAG: silently disables enforced-SSO until the Rust rebuild — confirm no org has enforceSSO=true. Keep the enforceSSO prop plumbing (column kept) but it is unused in render now."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/register.tsx",
+      "anchor": "import { SignInWithGithub } from \"@/components/proprietary/auth/sign-in-with-github\";",
+      "action": "replace-block",
+      "before": "import { SignInWithGithub } from \"@/components/proprietary/auth/sign-in-with-github\";\nimport { SignInWithGoogle } from \"@/components/proprietary/auth/sign-in-with-google\";",
+      "after": "",
+      "note": "Imports lines 12-13."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/register.tsx",
+      "anchor": "{isCloud && ( ... <SignInWithGithub /> ... <SignInWithGoogle /> ... )} followed by {isCloud && (<p>Or register with email</p>)}",
+      "action": "replace-block",
+      "before": "(the {isCloud && <div>...<SignInWithGithub/><SignInWithGoogle/>...</div>} OAuth block at ~162-167 AND the orphaned {isCloud && <p>Or register with email</p>} separator at ~168-172)",
+      "after": "",
+      "note": "Read lines 160-175 in full. Remove both the OAuth button block and the now-orphaned 'Or register with email' separator divider."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/components/layouts/side.tsx",
+      "anchor": "const { data: whitelabeling } = api.whitelabeling.get.useQuery(undefined, {",
+      "action": "replace-block",
+      "before": "\tconst { data: whitelabeling } = api.whitelabeling.get.useQuery(undefined, { staleTime, refetchOnWindowFocus }); (lines ~904-907)",
+      "after": "",
+      "note": "Remove the api.whitelabeling.get query + whitelabeling variable. Read 900-925 to also drop `whitelabeling` from the options object (~920)."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/components/layouts/side.tsx",
+      "anchor": "{whitelabeling?.footerText && (",
+      "action": "replace-block",
+      "before": "{whitelabeling?.footerText && (\n\t\t\t\t\t\t\t<...>\n\t\t\t\t\t\t\t\t{whitelabeling.footerText}\n\t\t\t\t\t\t\t</...>\n\t\t\t\t\t\t)} (lines ~1171-1173+)",
+      "after": "",
+      "note": "Remove the footerText render block. Read 1168-1178 in full to capture the wrapping element."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/components/layouts/side.tsx",
+      "anchor": "if (opts.whitelabeling?.docsUrl && item.name === \"Documentation\") {",
+      "action": "replace-block",
+      "before": "(the docsUrl/supportUrl override logic at ~468-475 and the `whitelabeling?: { docsUrl?: ...; supportUrl?: ... }` opts type at ~446-448)",
+      "after": "(restore the items unmodified; drop the whitelabeling opts field)",
+      "note": "Read 444-480 in full. Remove the whitelabeling URL-override branches and the opts type field. Help items keep their default urls."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/components/layouts/side.tsx",
+      "anchor": "title: \"Audit Logs\" (314-320), License nav (398-405), SSO nav (406-413), Whitelabeling nav (414-421)",
+      "action": "replace-block",
+      "before": "(four settings nav entry objects: Audit Logs ~314-320 [url /dashboard/settings/audit-logs], License ~398-405 [url /dashboard/settings/license], SSO ~406-413 [url /dashboard/settings/sso], Whitelabeling ~414-421 [url /dashboard/settings/whitelabeling])",
+      "after": "",
+      "note": "Delete the four nav entries pointing at the deleted settings pages. After removal, also delete now-unused icon imports ClipboardList (line 14) and Palette (line 29); verify Key/LogIn with rg before removing in case used elsewhere."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/utils/hooks/use-whitelabeling.ts",
+      "anchor": "export function useWhitelabeling() { ... api.whitelabeling.get ... } export function useWhitelabelingPublic() { ... api.whitelabeling.getPublic ... }",
+      "action": "replace-file",
+      "before": "(both functions call api.whitelabeling.get / api.whitelabeling.getPublic)",
+      "after": "// Whitelabeling removed during Apache-2.0 relicensing; stubbed until rebuilt.\nexport function useWhitelabeling() {\n\treturn { config: null as null };\n}\nexport function useWhitelabelingPublic() {\n\treturn { config: null as null };\n}",
+      "note": "STUB decision: keep the file, drop the api import and both query bodies. All 16 consumers already handle config: null, so no consumer edits are needed."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/dashboard/settings/users.tsx",
+      "anchor": "import { ManageCustomRoles } from \"@/components/proprietary/roles/manage-custom-roles\";",
+      "action": "delete-line",
+      "before": "import { ManageCustomRoles } from \"@/components/proprietary/roles/manage-custom-roles\";",
+      "after": "",
+      "note": "Line 9. Keep the rest of the Users page."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/pages/dashboard/settings/users.tsx",
+      "anchor": "{isOwnerOrAdmin && <ManageCustomRoles />}",
+      "action": "delete-line",
+      "before": "\t\t\t{isOwnerOrAdmin && <ManageCustomRoles />}",
+      "after": "",
+      "note": "Line 23 render."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/components/dashboard/settings/users/add-permissions.tsx",
+      "anchor": "import { EnterpriseFeatureLocked } from \"@/components/proprietary/enterprise-feature-gate\";",
+      "action": "delete-line",
+      "before": "import { EnterpriseFeatureLocked } from \"@/components/proprietary/enterprise-feature-gate\";",
+      "after": "",
+      "note": "Line 6."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/components/dashboard/settings/users/add-permissions.tsx",
+      "anchor": "api.licenseKey.haveValidLicenseKey.useQuery();",
+      "action": "replace-block",
+      "before": "(the api.licenseKey.haveValidLicenseKey query + haveValidLicense variable at ~202-203, and the two gated-field ternaries with <EnterpriseFeatureLocked/> else-branches at ~955-965 and ~1030-1040)",
+      "after": "(remove the query/variable AND both gated git-provider/server assignment field blocks together with their EnterpriseFeatureLocked placeholders, so neither renders)",
+      "note": "Read both ternaries fully before editing. Per-user assignment is a removed feature; remove the real field and the locked placeholder. This also drops the dangling api.licenseKey client call."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/components/dashboard/settings/users/show-users.tsx",
+      "anchor": "api.licenseKey.haveValidLicenseKey.useQuery();",
+      "action": "replace-block",
+      "before": "(the api.licenseKey.haveValidLicenseKey query at ~40-41, the hasCustomRolesWithoutLicense computation at ~50-51, and the {hasCustomRolesWithoutLicense && (...)} warning JSX at ~83)",
+      "after": "",
+      "note": "Custom roles removed, so the no-license warning is moot. Remove the query, the computed flag, and its render."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/components/dashboard/settings/users/change-role.tsx",
+      "anchor": "const { data: customRoles } = api.customRole.all.useQuery(undefined, {",
+      "action": "replace-block",
+      "before": "(the api.customRole.all query + customRoles variable at ~52-54, the {customRoles?.map((customRole) => <SelectItem .../>)} block at ~132-139, and the {customRoles && customRoles.length > 0 && (<FormDescription>...Custom roles...</FormDescription>)} at ~147-154)",
+      "after": "(remove all three; keep the static Admin/Member SelectItems + their static descriptions)",
+      "note": "Restrict the role selector to static roles. Remove the dangling api.customRole client call and the customRoles-dependent FormDescription."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/components/dashboard/settings/users/add-invitation.tsx",
+      "anchor": "const { data: customRoles } = api.customRole.all.useQuery();",
+      "action": "replace-block",
+      "before": "(the api.customRole.all query + customRoles variable at ~108, and the {customRoles?.map((role) => ...)} JSX at ~282)",
+      "after": "(remove both; limit invitation roles to static roles)",
+      "note": "Removes the dangling api.customRole client call in the invitation flow."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/__test__/permissions/check-permission.test.ts",
+      "anchor": "vi.mock(\"@dokploy/server/services/proprietary/license-key\", () => ({",
+      "action": "replace-block",
+      "before": "vi.mock(\"@dokploy/server/services/proprietary/license-key\", () => ({\n\thasValidLicense: vi.fn(() => Promise.resolve(false)),\n}));",
+      "after": "",
+      "note": "Lines ~46-48. Remove the mock; re-baseline any assertion that depended on the unlicensed resolveRole/checkPermission branch (now always-static-role)."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/__test__/permissions/service-access.test.ts",
+      "anchor": "vi.mock(\"@dokploy/server/services/proprietary/license-key\", () => ({",
+      "action": "replace-block",
+      "before": "vi.mock(\"@dokploy/server/services/proprietary/license-key\", () => ({\n\thasValidLicense: vi.fn(() => Promise.resolve(false)),\n}));",
+      "after": "",
+      "note": "Lines ~46-48. Remove the mock; re-baseline service-access assertions against the gate-free git-provider/server services."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/__test__/permissions/resolve-permissions.test.ts",
+      "anchor": "vi.mock(\"@dokploy/server/services/proprietary/license-key\", () => ({",
+      "action": "replace-block",
+      "before": "vi.mock(\"@dokploy/server/services/proprietary/license-key\", () => ({\n\thasValidLicense: vi.fn(() => Promise.resolve(false)),\n}));",
+      "after": "",
+      "note": "Lines ~46-48. Remove ONLY the license-key mock. Keep the enterpriseOnlyResources import (line 53) and the loops at 71/83 — the Set is kept. Re-baseline assertions."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/__test__/permissions/enterprise-only-resources.test.ts",
+      "anchor": "describe(\"enterpriseOnlyResources set\", ...)",
+      "action": "keep",
+      "before": "(no change)",
+      "after": "(no change)",
+      "note": "KEEP decision: enterpriseOnlyResources Set is retained, so this test stays valid. (Only delete if the Set is ever removed.)"
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/__test__/traefik/server/update-server-config.test.ts",
+      "anchor": "whitelabelingConfig literal at line ~51",
+      "action": "replace-block",
+      "before": "(the whitelabelingConfig: {...} property in the server-config test fixture at ~51)",
+      "after": "",
+      "note": "Remove the whitelabelingConfig literal since the column is dropped from web-server-settings."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/db/schema/user.ts",
+      "anchor": "// Enterprise / proprietary features\n\tenableEnterpriseFeatures: boolean(\"enableEnterpriseFeatures\")",
+      "action": "replace-block",
+      "before": "\t// Enterprise / proprietary features\n\tenableEnterpriseFeatures: boolean(\"enableEnterpriseFeatures\")\n\t\t.notNull()\n\t\t.default(false),\n\tlicenseKey: text(\"licenseKey\"),\n\tisValidEnterpriseLicense: boolean(\"isValidEnterpriseLicense\")\n\t\t.notNull()\n\t\t.default(false),",
+      "after": "",
+      "note": "Lines 57-64. Delete the comment + enableEnterpriseFeatures + licenseKey + isValidEnterpriseLicense columns. KEEP isEnterpriseCloud (line 71) and the stripe*/serversQuantity fields (billing out of scope)."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/db/schema/user.ts",
+      "anchor": ".omit({\n\t\trole: true,\n\t\ttrustedOrigins: true,\n\t\tbookmarkedTemplates: true,\n\t\tisValidEnterpriseLicense: true,\n\t\tisEnterpriseCloud: true,\n\t});",
+      "action": "replace-block",
+      "before": "\t\tisValidEnterpriseLicense: true,\n\t\tisEnterpriseCloud: true,",
+      "after": "\t\tisEnterpriseCloud: true,",
+      "note": "createInsertSchema().omit() at ~98. Remove only isValidEnterpriseLicense (column dropped). KEEP isEnterpriseCloud: true since that column stays."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/db/schema/web-server-settings.ts",
+      "anchor": "// Whitelabeling Configuration (Enterprise / Proprietary)\n\twhitelabelingConfig: jsonb(\"whitelabelingConfig\")",
+      "action": "replace-block",
+      "before": "\t// Whitelabeling Configuration (Enterprise / Proprietary)\n\twhitelabelingConfig: jsonb(\"whitelabelingConfig\")\n\t\t.$type<{...13 fields...}>()\n\t\t.default({...13 nulls...}), (lines 69-98)",
+      "after": "",
+      "note": "Delete the whitelabelingConfig jsonb column + comment (lines 69-98). KEEP remoteServersOnly (100) and enforceSSO (102) and their schema entries (162-163)."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/packages/server/src/db/schema/web-server-settings.ts",
+      "anchor": "export const whitelabelingConfigSchema = z.object({",
+      "action": "replace-block",
+      "before": "export const whitelabelingConfigSchema = z.object({ ...13 fields... }); (lines 201-214)\n\nexport const apiUpdateWhitelabeling = z.object({\n\twhitelabelingConfig: whitelabelingConfigSchema,\n}); (lines 216-218)",
+      "after": "",
+      "note": "Delete whitelabelingConfigSchema and apiUpdateWhitelabeling. If the `safeUrl` zod helper (lines ~195-199) becomes unused after this, remove it too — verify with rg."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/LICENSE.MD",
+      "anchor": "* All content that resides under a \"/proprietary\" directory ...",
+      "action": "replace-file",
+      "before": "(preamble 'Portions of this software are licensed as follows:' + the /proprietary carve-out bullet on line 5 + Apache section)",
+      "after": "(full standalone Apache License, Version 2.0 text with the Dokploy copyright line; no /proprietary carve-out, no LICENSE_PROPRIETARY reference)",
+      "note": "Replace with Apache-2.0 only."
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/TERMS_AND_CONDITIONS.md",
+      "anchor": "any commercial resale or redistribution of Dokploy as a service is strictly forbidden",
+      "action": "replace-block",
+      "before": "(the sentence prohibiting commercial resale/redistribution-as-a-service)",
+      "after": "(remove the anti-resale restriction so terms match Apache-2.0 permissions; or delete the file)",
+      "note": "FLAG to owner: rewrite to match Apache-2.0 or delete TERMS_AND_CONDITIONS.md entirely."
+    }
+  ],
+  "schemaMigration": {
+    "fields": [
+      "user.enableEnterpriseFeatures (DROP COLUMN)",
+      "user.licenseKey (DROP COLUMN)",
+      "user.isValidEnterpriseLicense (DROP COLUMN)",
+      "webServerSettings.whitelabelingConfig (DROP COLUMN)",
+      "KEEP user.isEnterpriseCloud (billing/cloud, out of scope)",
+      "KEEP webServerSettings.remoteServersOnly + webServerSettings.enforceSSO (real self-hosted features)",
+      "KEEP audit_log table + AuditAction/AuditResourceType types (non-proprietary, used by relocated service + audit() helper)",
+      "KEEP ssoProvider table / schema/sso.ts (dormant for future Rust SSO rebuild)"
+    ],
+    "approach": "Edit the schema TS files (packages/server/src/db/schema/user.ts + web-server-settings.ts) per the edits[] above, then run `pnpm --filter=dokploy migration:generate` (config apps/dokploy/server/db/drizzle.config.ts) to emit the next forward migration. The generator auto-updates drizzle/meta/_journal.json + writes a new snapshot. DO NOT hand-edit any existing apps/dokploy/drizzle/*.sql or drizzle/meta/*_snapshot.json — they are immutable history (latest existing migration is 0168_long_justice.sql; 66+ historical references to the dropped columns must stay). Expected new file content: ALTER TABLE \"user\" DROP COLUMN \"enableEnterpriseFeatures\"; ALTER TABLE \"user\" DROP COLUMN \"licenseKey\"; ALTER TABLE \"user\" DROP COLUMN \"isValidEnterpriseLicense\"; ALTER TABLE \"webServerSettings\" DROP COLUMN \"whitelabelingConfig\";",
+    "migrationFile": "/Users/malivix/Documents/ghaaf/crane/apps/dokploy/drizzle/0169_*.sql"
+  },
+  "licenseChanges": [
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/LICENSE.MD",
+      "action": "replace-with-apache-2.0-only (remove /proprietary carve-out clause on line 5 and the 'Portions licensed as follows' preamble; keep full Apache-2.0 text)"
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/LICENSE_PROPRIETARY.md",
+      "action": "delete"
+    },
+    {
+      "file": "/Users/malivix/Documents/ghaaf/crane/TERMS_AND_CONDITIONS.md",
+      "action": "remove-anti-resale-clause-or-delete (FLAG to owner: rewrite to match Apache-2.0 permissions, or delete the file)"
+    },
+    {
+      "file": "package.json license fields (root + apps/* + packages/*)",
+      "action": "set \"license\": \"Apache-2.0\" where present; verify with `rg '\"license\"' --glob '!**/node_modules/**'`"
+    }
+  ]
+}
