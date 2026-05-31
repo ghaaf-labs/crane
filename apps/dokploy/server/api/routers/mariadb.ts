@@ -413,6 +413,15 @@ export const mariadbRouter = createTRPCRouter({
 			const containerCmd = getServiceContainerCommand(appName);
 			const targetUser = type === "root" ? "root" : databaseUser;
 
+			// targetUser is spliced into a /bin/bash command; constrain it
+			// (databaseRootPassword and the new password are already regex-guarded).
+			if (!/^[A-Za-z0-9_]+$/.test(targetUser)) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Invalid database user",
+				});
+			}
+
 			const command = `
 				CONTAINER_ID=$(${containerCmd})
 				if [ -z "$CONTAINER_ID" ]; then

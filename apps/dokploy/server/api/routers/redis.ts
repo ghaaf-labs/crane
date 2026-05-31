@@ -418,6 +418,15 @@ export const redisRouter = createTRPCRouter({
 			const rd = await findRedisById(redisId);
 			const { appName, serverId, databasePassword } = rd;
 
+			// databasePassword is spliced into a /bin/bash command; constrain it
+			// (the new password is already validated by the input schema).
+			if (databasePassword && !DATABASE_PASSWORD_REGEX.test(databasePassword)) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Invalid stored database password",
+				});
+			}
+
 			const containerCmd = getServiceContainerCommand(appName);
 			const command = `
 				CONTAINER_ID=$(${containerCmd})

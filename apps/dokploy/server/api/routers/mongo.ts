@@ -431,6 +431,18 @@ export const mongoRouter = createTRPCRouter({
 			const mongo = await findMongoById(mongoId);
 			const { appName, serverId, databaseUser, databasePassword } = mongo;
 
+			// Stored credentials are spliced into a /bin/bash command; constrain
+			// them (the new password is already validated by the input schema).
+			if (
+				!/^[A-Za-z0-9_]+$/.test(databaseUser) ||
+				!DATABASE_PASSWORD_REGEX.test(databasePassword)
+			) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Invalid stored database credentials",
+				});
+			}
+
 			const containerCmd = getServiceContainerCommand(appName);
 			const command = `
 				CONTAINER_ID=$(${containerCmd})
