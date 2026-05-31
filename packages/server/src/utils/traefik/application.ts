@@ -272,7 +272,13 @@ export const writeTraefikConfigRemote = async (
 		const { DYNAMIC_TRAEFIK_PATH } = paths(true);
 		const configPath = path.join(DYNAMIC_TRAEFIK_PATH, `${appName}.yml`);
 		const yamlStr = stringify(traefikConfig);
-		await execAsyncRemote(serverId, `echo '${yamlStr}' > ${configPath}`);
+		// Pipe via base64 instead of inlining YAML into the shell: YAML can
+		// contain single quotes that would break out of `echo '…'` (injection).
+		const encoded = Buffer.from(yamlStr, "utf8").toString("base64");
+		await execAsyncRemote(
+			serverId,
+			`echo "${encoded}" | base64 -d > "${configPath}"`,
+		);
 	} catch (e) {
 		console.error("Error saving the YAML config file:", e);
 	}
