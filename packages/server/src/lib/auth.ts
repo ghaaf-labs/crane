@@ -45,10 +45,12 @@ const { handler, api } = betterAuth({
 	...(!IS_CLOUD
 		? {
 				advanced: {
-					useSecureCookies: false,
+					// Default off so plain-HTTP / localhost self-hosting keeps
+					// working; set SECURE_COOKIES=true when serving over HTTPS.
+					useSecureCookies: process.env.SECURE_COOKIES === "true",
 					defaultCookieAttributes: {
 						sameSite: "lax",
-						secure: false,
+						secure: process.env.SECURE_COOKIES === "true",
 						httpOnly: true,
 						path: "/",
 					},
