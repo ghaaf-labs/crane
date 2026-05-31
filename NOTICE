@@ -1,0 +1,29 @@
+Crane
+Copyright 2026 ghaaf-labs
+
+This product is licensed under the Apache License, Version 2.0 (see the LICENSE
+file in this repository).
+
+------------------------------------------------------------------------------
+Upstream attribution
+------------------------------------------------------------------------------
+
+This software is a derivative work of Dokploy
+(https://github.com/Dokploy/dokploy), Copyright Dokploy Technology, Inc.,
+the Apache-2.0-licensed portions of which were used as the starting point for
+this fork.
+
+This fork removes all components that were distributed under the Dokploy Source
+Available License (DSAL) — every file that previously lived under a
+"/proprietary" directory, together with the license-key gating mechanism — and
+relicenses the entire remaining codebase under the Apache License, Version 2.0.
+None of the removed DSAL-licensed source is retained or redistributed here.
+
+------------------------------------------------------------------------------
+Third-party components
+------------------------------------------------------------------------------
+
+This product includes third-party software components, each of which is
+licensed under the original license provided by the owner of the applicable
+component. See the dependency manifests (package.json / pnpm-lock.yaml) and the
+respective packages for their license terms.

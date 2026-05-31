@@ -77,7 +77,6 @@ import { appRouter } from "../root";
 import {
 	adminProcedure,
 	createTRPCRouter,
-	enterpriseProcedure,
 	protectedProcedure,
 	publicProcedure,
 } from "../trpc";
@@ -446,7 +445,7 @@ export const settingsRouter = createTRPCRouter({
 			return true;
 		}),
 
-	updateRemoteServersOnly: enterpriseProcedure
+	updateRemoteServersOnly: adminProcedure
 		.input(z.object({ remoteServersOnly: z.boolean() }))
 		.mutation(async ({ input, ctx }) => {
 			if (IS_CLOUD) {
@@ -468,7 +467,7 @@ export const settingsRouter = createTRPCRouter({
 			return true;
 		}),
 
-	updateEnforceSSO: enterpriseProcedure
+	updateEnforceSSO: adminProcedure
 		.input(z.object({ enforceSSO: z.boolean() }))
 		.mutation(async ({ input, ctx }) => {
 			if (IS_CLOUD) {
@@ -714,11 +713,6 @@ export const settingsRouter = createTRPCRouter({
 					"server",
 					"volumeBackups",
 					"environment",
-					"auditLog",
-					"customRole",
-					"whitelabeling",
-					"sso",
-					"licenseKey",
 					"organization",
 					"previewDeployment",
 				],

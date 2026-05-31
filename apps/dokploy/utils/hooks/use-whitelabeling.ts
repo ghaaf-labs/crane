@@ -1,25 +1,28 @@
-import { api } from "@/utils/api";
+// Whitelabeling was a DSAL/proprietary feature removed during the Apache-2.0
+// relicensing. These hooks are stubbed to always report "no config" until the
+// feature is rebuilt. The config type is preserved (always null at runtime) so
+// the existing consumers — which read fields via optional chaining — keep
+// type-checking without edits.
 
-/**
- * Hook to access whitelabeling config for authenticated pages (dashboard, services, etc.).
- * Requires the user to be logged in.
- */
-export function useWhitelabeling() {
-	const { data, ...rest } = api.whitelabeling.get.useQuery(undefined, {
-		staleTime: 5 * 60 * 1000,
-		refetchOnWindowFocus: false,
-	});
-	return { config: data ?? null, ...rest };
+type WhitelabelingConfig = {
+	appName: string | null;
+	appDescription: string | null;
+	logoUrl: string | null;
+	faviconUrl: string | null;
+	customCss: string | null;
+	loginLogoUrl: string | null;
+	supportUrl: string | null;
+	docsUrl: string | null;
+	errorPageTitle: string | null;
+	errorPageDescription: string | null;
+	metaTitle: string | null;
+	footerText: string | null;
+};
+
+export function useWhitelabeling(): { config: WhitelabelingConfig | null } {
+	return { config: null };
 }
 
-/**
- * Hook to access the public whitelabeling config.
- * Only for unauthenticated pages (login, register, error, invitation, password reset).
- */
-export function useWhitelabelingPublic() {
-	const { data, ...rest } = api.whitelabeling.getPublic.useQuery(undefined, {
-		staleTime: 5 * 60 * 1000,
-		refetchOnWindowFocus: false,
-	});
-	return { config: data ?? null, ...rest };
+export function useWhitelabelingPublic(): { config: WhitelabelingConfig | null } {
+	return { config: null };
 }

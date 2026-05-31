@@ -1,6 +1,5 @@
 import { db } from "@dokploy/server/db";
-import { member, organizationRole } from "@dokploy/server/db/schema";
-import { hasValidLicense } from "@dokploy/server/services/proprietary/license-key";
+import { member } from "@dokploy/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import {
@@ -44,33 +43,7 @@ const resolveRole = async (
 		return staticRoles[roleName];
 	}
 
-	const licensed = await hasValidLicense(organizationId);
-	if (!licensed) {
-		return null;
-	}
-
-	const customRoles = await db.query.organizationRole.findMany({
-		where: and(
-			eq(organizationRole.organizationId, organizationId),
-			eq(organizationRole.role, roleName),
-		),
-	});
-
-	if (customRoles.length === 0) {
-		return null;
-	}
-
-	const merged: Record<string, string[]> = {};
-	for (const entry of customRoles) {
-		const parsed = JSON.parse(entry.permission) as Record<string, string[]>;
-		for (const [resource, actions] of Object.entries(parsed)) {
-			merged[resource] = [
-				...new Set([...(merged[resource] ?? []), ...actions]),
-			];
-		}
-	}
-
-	return ac.newRole(merged as any);
+	return null;
 };
 
 export const checkPermission = async (

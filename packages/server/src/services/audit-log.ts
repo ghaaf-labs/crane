@@ -1,7 +1,6 @@
 import { db } from "@dokploy/server/db";
 import type { AuditAction, AuditResourceType } from "@dokploy/server/db/schema";
 import { auditLog } from "@dokploy/server/db/schema";
-import { hasValidLicense } from "@dokploy/server/services/proprietary/license-key";
 import { and, desc, eq, gte, ilike, lte } from "drizzle-orm";
 
 export type { AuditAction, AuditResourceType };
@@ -19,14 +18,14 @@ export interface CreateAuditLogInput {
 }
 
 /**
- * Creates an audit log entry. Fire-and-forget safe — errors are swallowed
- * so a logging failure never breaks the main operation.
+ * Persists an audit-log entry. Fire-and-forget safe: any failure is logged and
+ * swallowed so audit logging can never break the operation it is recording.
+ *
+ * Audit logging is an always-on, open feature in this fork (Apache-2.0). It is
+ * not gated by any license check.
  */
 export const createAuditLog = async (input: CreateAuditLogInput) => {
 	try {
-		const licensed = await hasValidLicense(input.organizationId);
-		if (!licensed) return;
-
 		await db.insert(auditLog).values({
 			organizationId: input.organizationId,
 			userId: input.userId,
@@ -56,6 +55,10 @@ export interface GetAuditLogsInput {
 	offset?: number;
 }
 
+/**
+ * Reads audit-log entries for an organization with optional filtering and
+ * pagination. Exposed for a future (Apache-licensed) audit viewer.
+ */
 export const getAuditLogs = async (input: GetAuditLogsInput) => {
 	const {
 		organizationId,
