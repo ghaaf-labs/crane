@@ -25,6 +25,16 @@ if (!API_KEY && process.env.NODE_ENV !== "test") {
 	);
 }
 
+// The /api/inngest endpoint bypasses the API-key middleware and depends on
+// Inngest request-signature verification, which the SDK only performs when a
+// signing key is configured. Fail closed in production so that endpoint is not
+// left unauthenticated (it can trigger deployments).
+if (!process.env.INNGEST_SIGNING_KEY && process.env.NODE_ENV === "production") {
+	throw new Error(
+		"INNGEST_SIGNING_KEY is not set. The /api/inngest endpoint would be unauthenticated in production.",
+	);
+}
+
 const safeEqual = (a: string, b: string): boolean => {
 	const ab = Buffer.from(a);
 	const bb = Buffer.from(b);
