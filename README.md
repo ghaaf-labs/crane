@@ -15,14 +15,15 @@ It is an **Apache-2.0** hard fork of [Dokploy](https://github.com/dokploy/dokplo
 - **Multi Node**: Scale applications across nodes with Docker Swarm.
 - **Templates**: Deploy open-source templates (Plausible, PocketBase, Cal.com, etc.) in one click.
 - **Traefik Integration**: Automatic routing and load balancing.
-- **Real-time Monitoring**: CPU, memory, storage, and network usage per resource.
+- **Real-time Monitoring**: CPU, memory, storage, and network usage per resource (network/block I/O shown as a true per-second rate).
+- **Audit Logs**: an always-on, organization-wide trail (deployments, resource changes, sign-ins) with an owner/admin viewer — filters, pagination, CSV export, and opt-in retention.
 - **Docker Management**: Deploy and manage Docker containers.
 - **CLI/API**: Manage applications and databases from the command line or API.
 - **Notifications**: Deployment success/failure alerts (Slack, Discord, Telegram, Email, etc.).
 - **Multi Server**: Deploy and manage applications on remote servers.
 - **Self-Hosted**: Run it on your own VPS.
 
-> **Note:** OAuth/SSO sign-in and the enterprise features (custom roles, audit-log viewer, whitelabeling, license keys) from upstream's `/proprietary` layer have been removed. Authentication is email/password; OAuth/SSO are planned to be rebuilt in Rust.
+> **Note:** OAuth/SSO sign-in and the enterprise features (custom roles, whitelabeling, license keys) from upstream's `/proprietary` layer have been removed. Authentication is email/password; OAuth/SSO are planned to be rebuilt in Rust. The audit log is **not** removed — it was reimplemented as an always-on, Apache-licensed feature (see [`docs/operations/audit-logs.md`](./docs/operations/audit-logs.md)).
 
 ## 🚀 Development
 

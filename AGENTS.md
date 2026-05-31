@@ -168,6 +168,16 @@ These are non-negotiable. A change that violates any of them is wrong.
   weaker (`strict` only) — match the stronger bar in new code where feasible.
 - **Errors:** routers throw `TRPCError`; avoid silently-swallowed
   `catch (_) {}`. Prefer a structured log over raw `console.*` in new code.
+- **Audit logging:** new state-changing mutations on sensitive resources should
+  record an entry via the `audit(ctx, {...})` helper
+  (`apps/dokploy/server/api/utils/audit.ts`), placed **after** the operation
+  succeeds; it's fire-and-forget (never throws). Never log secrets
+  (passwords/API keys) in `metadata`. Add new resource kinds to
+  `auditActions`/`auditResourceTypes` (`packages/server/src/db/schema/audit-log.ts`)
+  — the reader's zod enum derives from those arrays. Note: audit reads are
+  **owner/admin-only via `adminProcedure`**, NOT `withPermission("auditLog","read")`
+  — `auditLog` is an enterprise-only resource whose permission check is bypassed
+  (granted) for static roles incl. members. See `docs/operations/audit-logs.md`.
 - **Auth/security:** passwords hash with **argon2id**
   (`packages/server/src/lib/password.ts`; `verifyPassword` accepts legacy bcrypt
   and re-hashes on next change). `BETTER_AUTH_SECRET` is **required** (the app
@@ -206,6 +216,9 @@ These docs live under `docs/` and are the authoritative companions to this file:
   (argon2id + the bcrypt migration) and
   [`docs/security/docker-socket-hardening.md`](./docs/security/docker-socket-hardening.md)
   (socket-proxy / read-only / TLS recommendations).
+- **Operations** — [`docs/operations/audit-logs.md`](./docs/operations/audit-logs.md):
+  the (rebuilt, Apache-licensed) audit-log viewer + CSV export (owner/admin) and
+  the opt-in `AUDIT_LOG_RETENTION_DAYS` retention job.
 - **Rust rewrite roadmap** — [`docs/RUST-MIGRATION-ROADMAP.md`](./docs/RUST-MIGRATION-ROADMAP.md):
   target `packages/server` services/utils first; keep tRPC routers as thin
   adapters; `ssh2`→`russh`, `dockerode`→`bollard`, byte-for-byte command strings
