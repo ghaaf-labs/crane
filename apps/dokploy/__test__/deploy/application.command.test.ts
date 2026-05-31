@@ -185,7 +185,8 @@ describe("deployApplication - Command Generation Tests", () => {
 
 		expect(command).toContain("https://github.com/Dokploy/examples.git");
 		expect(command).not.toContain("--recurse-submodules");
-		expect(command).toContain("--branch main");
+		// Branch/URL are shell-quoted to prevent command injection.
+		expect(command).toContain("--branch 'main'");
 		expect(command).toContain("--depth 1");
 		expect(command).toContain("git clone");
 	});
