@@ -437,6 +437,16 @@ export const postgresRouter = createTRPCRouter({
 			const pg = await findPostgresById(postgresId);
 			const { appName, serverId, databaseUser } = pg;
 
+			// databaseUser is interpolated into a shell command and the psql SQL
+			// string, so constrain it to a safe Postgres identifier (it is not
+			// covered by DATABASE_PASSWORD_REGEX) to prevent command/SQL injection.
+			if (!/^[A-Za-z0-9_]+$/.test(databaseUser)) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Invalid database user",
+				});
+			}
+
 			const containerCmd = getServiceContainerCommand(appName);
 			const command = `
 				CONTAINER_ID=$(${containerCmd})
