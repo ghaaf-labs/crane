@@ -37,6 +37,7 @@ import {
 	createTRPCRouter,
 	protectedProcedure,
 } from "@/server/api/trpc";
+import { audit } from "@/server/api/utils/audit";
 import { generatePassword } from "@/templates/utils";
 
 export const aiRouter = createTRPCRouter({
@@ -175,11 +176,33 @@ export const aiRouter = createTRPCRouter({
 			}
 		}),
 	create: adminProcedure.input(apiCreateAi).mutation(async ({ ctx, input }) => {
-		return await saveAiSettings(ctx.session.activeOrganizationId, input);
+		const result = await saveAiSettings(
+			ctx.session.activeOrganizationId,
+			input,
+		);
+		// Never log the apiKey — only non-secret config.
+		await audit(ctx, {
+			action: "create",
+			resourceType: "ai",
+			resourceName: input.name,
+			metadata: { apiUrl: input.apiUrl, model: input.model },
+		});
+		return result;
 	}),
 
 	update: adminProcedure.input(apiUpdateAi).mutation(async ({ ctx, input }) => {
-		return await saveAiSettings(ctx.session.activeOrganizationId, input);
+		const result = await saveAiSettings(
+			ctx.session.activeOrganizationId,
+			input,
+		);
+		await audit(ctx, {
+			action: "update",
+			resourceType: "ai",
+			resourceId: input.aiId,
+			resourceName: input.name,
+			metadata: { apiUrl: input.apiUrl, model: input.model },
+		});
+		return result;
 	}),
 
 	getAll: adminProcedure.query(async ({ ctx }) => {
@@ -196,8 +219,17 @@ export const aiRouter = createTRPCRouter({
 
 	delete: adminProcedure
 		.input(z.object({ aiId: z.string() }))
-		.mutation(async ({ input }) => {
-			return await deleteAiSettings(input.aiId);
+		.mutation(async ({ ctx, input }) => {
+			// Capture the name before deletion so the audit entry is meaningful.
+			const existing = await getAiSettingById(input.aiId);
+			const result = await deleteAiSettings(input.aiId);
+			await audit(ctx, {
+				action: "delete",
+				resourceType: "ai",
+				resourceId: input.aiId,
+				resourceName: existing?.name,
+			});
+			return result;
 		}),
 
 	getEnabledProviders: protectedProcedure.query(async ({ ctx }) => {

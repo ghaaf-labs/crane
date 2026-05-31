@@ -24,6 +24,13 @@ describe("audit-log enum arrays", () => {
 		expect(new Set(auditResourceTypes).size).toBe(auditResourceTypes.length);
 	});
 
+	it("cover the sensitive resource types that have audited mutations", () => {
+		// guards against a router auditing a resourceType the union doesn't know
+		for (const required of ["ai", "tag", "user", "settings", "registry"]) {
+			expect(auditResourceTypes).toContain(required);
+		}
+	});
+
 	it("derive types that stay in sync with the arrays", () => {
 		// Compile-time guard: every array member is assignable to the union and
 		// vice-versa. If the union and array drift, this stops compiling.

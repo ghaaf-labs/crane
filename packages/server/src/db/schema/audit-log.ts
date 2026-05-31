@@ -98,6 +98,8 @@ export const auditResourceTypes = [
 	"mount",
 	"application",
 	"compose",
+	"ai",
+	"tag",
 ] as const;
 
 export type AuditAction = (typeof auditActions)[number];

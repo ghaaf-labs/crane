@@ -2,6 +2,7 @@ import { findMemberByUserId } from "@crane/server/services/permission";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { audit } from "@/server/api/utils/audit";
 import { db } from "@/server/db";
 import {
 	apiCreateTag,
@@ -27,6 +28,13 @@ export const tagRouter = createTRPCRouter({
 						organizationId: ctx.session.activeOrganizationId,
 					})
 					.returning();
+
+				await audit(ctx, {
+					action: "create",
+					resourceType: "tag",
+					resourceId: newTag[0]?.tagId,
+					resourceName: input.name,
+				});
 
 				return newTag[0];
 			} catch (error) {
@@ -121,6 +129,13 @@ export const tagRouter = createTRPCRouter({
 					.where(eq(tags.tagId, input.tagId))
 					.returning();
 
+				await audit(ctx, {
+					action: "update",
+					resourceType: "tag",
+					resourceId: input.tagId,
+					resourceName: input.name ?? existingTag.name,
+				});
+
 				return updatedTag[0];
 			} catch (error) {
 				if (error instanceof TRPCError) {
@@ -164,6 +179,13 @@ export const tagRouter = createTRPCRouter({
 
 				// Delete the tag - cascade delete will handle projectTags associations
 				await db.delete(tags).where(eq(tags.tagId, input.tagId));
+
+				await audit(ctx, {
+					action: "delete",
+					resourceType: "tag",
+					resourceId: input.tagId,
+					resourceName: existingTag.name,
+				});
 
 				return { success: true };
 			} catch (error) {
