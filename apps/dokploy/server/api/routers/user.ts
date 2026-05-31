@@ -603,12 +603,20 @@ export const userRouter = createTRPCRouter({
 				});
 			}
 
-			return await createOrganizationUserWithCredentials({
+			const created = await createOrganizationUserWithCredentials({
 				organizationId: ctx.session.activeOrganizationId,
 				email: input.email,
 				password: input.password,
 				role: input.role,
 			});
+			// Never log the password — only who/what was created.
+			await audit(ctx, {
+				action: "create",
+				resourceType: "user",
+				resourceName: input.email,
+				metadata: { role: input.role, type: "credentials" },
+			});
+			return created;
 		}),
 	sendInvitation: withPermission("member", "create")
 		.input(
@@ -651,7 +659,7 @@ export const userRouter = createTRPCRouter({
 			try {
 				const toEmail = currentInvitation?.email || "";
 				const orgName = organization?.name || "organization";
-				const subject = `You've been invited to join ${orgName} on Dokploy`;
+				const subject = `You've been invited to join ${orgName} on Crane`;
 				const html = await renderInvitationEmail({
 					email: toEmail,
 					inviteLink,

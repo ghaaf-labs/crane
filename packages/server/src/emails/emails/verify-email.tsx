@@ -5,7 +5,6 @@ import {
 	Head,
 	Heading,
 	Html,
-	Img,
 	Link,
 	Preview,
 	Section,
@@ -20,7 +19,7 @@ export type TemplateProps = {
 
 export const VerifyEmailTemplate = ({
 	userName = "User",
-	verificationUrl = "https://app.dokploy.com/verify",
+	verificationUrl = "https://github.com/ghaaf-labs/crane",
 }: TemplateProps) => {
 	const previewText = "Verify your email address to get started with Crane";
 	return (
@@ -42,13 +41,9 @@ export const VerifyEmailTemplate = ({
 					<Container className="my-[40px] mx-auto max-w-[520px]">
 						{/* Header */}
 						<Section className="bg-[#09090b] rounded-t-xl px-[40px] py-[32px] text-center">
-							<Img
-								src="https://raw.githubusercontent.com/Dokploy/website/refs/heads/main/apps/docs/public/logo-dokploy-blackpng.png"
-								width="190"
-								height="120"
-								alt="Crane"
-								className="my-0 mx-auto"
-							/>
+							<Text className="text-white text-[28px] font-bold m-0 tracking-tight">
+								Crane
+							</Text>
 						</Section>
 
 						{/* Body */}
