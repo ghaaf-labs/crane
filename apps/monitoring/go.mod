@@ -1,4 +1,4 @@
-module github.com/mauriciogm/dokploy/apps/monitoring
+module github.com/ghaaf-labs/crane/apps/monitoring
 
 go 1.21
 
@@ -31,4 +31,4 @@ require (
 	golang.org/x/sys v0.28.0 // indirect
 )
 
-replace github.com/mauriciogm/dokploy/apps/monitoring => ./
+replace github.com/ghaaf-labs/crane/apps/monitoring => ./
