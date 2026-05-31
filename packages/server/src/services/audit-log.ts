@@ -1,9 +1,56 @@
 import { db } from "@crane/server/db";
-import type { AuditAction, AuditResourceType } from "@crane/server/db/schema";
+import type {
+	AuditAction,
+	AuditLog,
+	AuditResourceType,
+} from "@crane/server/db/schema";
 import { auditLog } from "@crane/server/db/schema";
 import { and, desc, eq, gte, ilike, inArray, lt, lte } from "drizzle-orm";
 
 export type { AuditAction, AuditResourceType };
+
+/**
+ * Serializes audit-log rows to RFC-4180 CSV (CRLF rows, quoted/escaped fields).
+ * Pure — used by the viewer's export so operators can pull the trail for
+ * compliance/analysis. Timestamps are emitted as ISO-8601 UTC.
+ */
+export const auditLogsToCsv = (logs: AuditLog[]): string => {
+	const header = [
+		"createdAt",
+		"userEmail",
+		"userRole",
+		"action",
+		"resourceType",
+		"resourceName",
+		"resourceId",
+		"metadata",
+	];
+	const escapeField = (value: unknown): string => {
+		let s = value == null ? "" : String(value);
+		// Neutralize spreadsheet formula injection: a field beginning with
+		// = + - @ TAB or CR is executed as a formula by Excel/Sheets/LibreOffice.
+		// resourceName/metadata are user-controllable, so prefix a single quote.
+		if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+		return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+	};
+	const lines = logs.map((log) =>
+		[
+			log.createdAt instanceof Date
+				? log.createdAt.toISOString()
+				: String(log.createdAt ?? ""),
+			log.userEmail,
+			log.userRole,
+			log.action,
+			log.resourceType,
+			log.resourceName ?? "",
+			log.resourceId ?? "",
+			log.metadata ?? "",
+		]
+			.map(escapeField)
+			.join(","),
+	);
+	return [header.join(","), ...lines].join("\r\n");
+};
 
 export interface CreateAuditLogInput {
 	organizationId: string;

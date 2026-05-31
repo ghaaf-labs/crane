@@ -3,12 +3,14 @@ import { format } from "date-fns";
 import {
 	ChevronLeft,
 	ChevronRight,
+	Download,
 	FileClock,
 	Loader2,
 	Search,
 	X,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,6 +86,44 @@ export const ShowAuditLogs = () => {
 	};
 
 	const { data, isPending, isFetching } = api.auditLog.all.useQuery(filters);
+	const utils = api.useUtils();
+	const [isExporting, setIsExporting] = useState(false);
+
+	// Export respects the active filters (not pagination); server caps the rows.
+	const exportFilters = {
+		userEmail: userEmail.trim() || undefined,
+		resourceName: resourceName.trim() || undefined,
+		action: action === ANY ? undefined : (action as Action),
+		resourceType:
+			resourceType === ANY
+				? undefined
+				: (resourceType as (typeof auditResourceTypes)[number]),
+	};
+
+	const handleExport = async () => {
+		setIsExporting(true);
+		try {
+			const result = await utils.auditLog.export.fetch(exportFilters);
+			const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+			link.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(url);
+			toast.success(
+				result.truncated
+					? `Exported ${result.rowCount} of ${result.total} entries (capped)`
+					: `Exported ${result.rowCount} entries`,
+			);
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : "Export failed");
+		} finally {
+			setIsExporting(false);
+		}
+	};
 
 	const logs = data?.logs ?? [];
 	const total = data?.total ?? 0;
@@ -114,15 +154,31 @@ export const ShowAuditLogs = () => {
 		<div className="w-full">
 			<Card className="h-full bg-sidebar p-2.5 rounded-xl max-w-7xl mx-auto">
 				<div className="rounded-xl bg-background shadow-md">
-					<CardHeader>
-						<CardTitle className="text-xl flex flex-row gap-2">
-							<FileClock className="size-6 text-muted-foreground self-center" />
-							Audit Logs
-						</CardTitle>
-						<CardDescription>
-							A read-only trail of who did what across this organization —
-							deployments, resource changes, and sign-ins.
-						</CardDescription>
+					<CardHeader className="flex flex-row items-start justify-between gap-4">
+						<div className="space-y-1.5">
+							<CardTitle className="text-xl flex flex-row gap-2">
+								<FileClock className="size-6 text-muted-foreground self-center" />
+								Audit Logs
+							</CardTitle>
+							<CardDescription>
+								A read-only trail of who did what across this organization —
+								deployments, resource changes, and sign-ins.
+							</CardDescription>
+						</div>
+						<Button
+							variant="outline"
+							size="sm"
+							className="gap-1 shrink-0"
+							onClick={handleExport}
+							disabled={isExporting || total === 0}
+						>
+							{isExporting ? (
+								<Loader2 className="size-4 animate-spin" />
+							) : (
+								<Download className="size-4" />
+							)}
+							Export CSV
+						</Button>
 					</CardHeader>
 					<CardContent className="space-y-4 py-6 border-t">
 						<div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">

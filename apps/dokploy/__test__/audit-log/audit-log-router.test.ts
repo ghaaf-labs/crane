@@ -11,11 +11,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  */
 
 const getAuditLogs = vi.fn(() => Promise.resolve({ logs: [], total: 0 }));
+const auditLogsToCsv = vi.fn(() => "header\r\nrow");
 
 // Keep module load light: trpc.ts pulls in db + auth, which we don't exercise.
 vi.mock("@crane/server/db", () => ({ db: {} }));
 vi.mock("@crane/server/lib/auth", () => ({ validateRequest: vi.fn() }));
-vi.mock("@crane/server/services/audit-log", () => ({ getAuditLogs }));
+vi.mock("@crane/server/services/audit-log", () => ({
+	getAuditLogs,
+	auditLogsToCsv,
+}));
 
 const { auditLogRouter } = await import("../../server/api/routers/audit-log");
 const { createTRPCRouter } = await import("../../server/api/trpc");
@@ -107,5 +111,47 @@ describe("auditLog.all input handling", () => {
 		const caller = router.createCaller(makeCtx("admin") as any);
 		await expect(caller.auditLog.all({ limit: 9999 })).rejects.toBeDefined();
 		expect(getAuditLogs).not.toHaveBeenCalled();
+	});
+});
+
+describe("auditLog.export", () => {
+	it("rejects a plain member and never reads logs", async () => {
+		const caller = router.createCaller(makeCtx("member") as any);
+		await expect(caller.auditLog.export({})).rejects.toMatchObject({
+			code: "UNAUTHORIZED",
+		});
+		expect(getAuditLogs).not.toHaveBeenCalled();
+	});
+
+	it("scopes to the org, uses the export cap, and returns CSV", async () => {
+		getAuditLogs.mockResolvedValueOnce({
+			logs: [{ id: "1" }, { id: "2" }] as any,
+			total: 2,
+		});
+		const caller = router.createCaller(makeCtx("admin", "org-X") as any);
+		const result = await caller.auditLog.export({ action: "deploy" });
+		expect(getAuditLogs).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-X",
+				action: "deploy",
+				limit: 10_000,
+				offset: 0,
+			}),
+		);
+		expect(auditLogsToCsv).toHaveBeenCalledTimes(1);
+		expect(result.csv).toBe("header\r\nrow");
+		expect(result.rowCount).toBe(2);
+		expect(result.total).toBe(2);
+		expect(result.truncated).toBe(false);
+	});
+
+	it("flags truncation when total exceeds returned rows", async () => {
+		getAuditLogs.mockResolvedValueOnce({
+			logs: [{ id: "1" }] as any,
+			total: 50_000,
+		});
+		const caller = router.createCaller(makeCtx("admin") as any);
+		const result = await caller.auditLog.export({});
+		expect(result.truncated).toBe(true);
 	});
 });
