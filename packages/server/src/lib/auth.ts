@@ -181,10 +181,9 @@ const { handler, api } = betterAuth({
 								});
 							}
 						} else {
-							const isSSORequest = context?.path.includes("/sso");
-							if (isSSORequest) {
-								return;
-							}
+							// The single-admin guard always applies. (Previously an
+							// `/sso` request path bypassed it; SSO sign-up is removed, so
+							// the bypass is closed to prevent unguarded account creation.)
 							const isAdminPresent = await db.query.member.findFirst({
 								where: eq(schema.member.role, "owner"),
 							});
