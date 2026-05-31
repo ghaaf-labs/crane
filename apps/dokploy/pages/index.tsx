@@ -54,7 +54,7 @@ interface Props {
 	IS_CLOUD: boolean;
 	enforceSSO: boolean;
 }
-export default function Home({ IS_CLOUD, enforceSSO }: Props) {
+export default function Home({ IS_CLOUD }: Props) {
 	const router = useRouter();
 	const { config: whitelabeling } = useWhitelabelingPublic();
 	const [isLoginLoading, setIsLoginLoading] = useState(false);

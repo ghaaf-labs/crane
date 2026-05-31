@@ -140,7 +140,8 @@ export const serverRouter = createTRPCRouter({
 				orderBy: desc(server.createdAt),
 				where: eq(server.organizationId, ctx.session.activeOrganizationId),
 			});
-		}),
+		},
+	),
 	count: protectedProcedure.query(async ({ ctx }) => {
 		const organizations = await db.query.organization.findMany({
 			where: eq(organization.ownerId, ctx.user.id),

@@ -23,6 +23,8 @@ export function useWhitelabeling(): { config: WhitelabelingConfig | null } {
 	return { config: null };
 }
 
-export function useWhitelabelingPublic(): { config: WhitelabelingConfig | null } {
+export function useWhitelabelingPublic(): {
+	config: WhitelabelingConfig | null;
+} {
 	return { config: null };
 }

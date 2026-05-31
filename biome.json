@@ -13,6 +13,7 @@
 			"!**/.next/**",
 			"!**/dist",
 			"!**/drizzle/**",
+			"!docs/**",
 			"!node_modules/**",
 			"!packages/server/package.json"
 		],
@@ -61,8 +62,19 @@
 				"useKeyWithClickEvents": "off",
 				"useAriaPropsForRole": "off",
 				"useAriaPropsSupportedByRole": "off",
-				"noStaticElementInteractions": "off"
+				"noStaticElementInteractions": "off",
+				"useSemanticElements": "off"
 			}
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["**/__test__/**"],
+			"linter": {
+				"rules": {
+					"suspicious": { "noThenProperty": "off" }
+				}
+			}
+		}
+	]
 }

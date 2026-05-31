@@ -3,7 +3,7 @@ import { member } from "@dokploy/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import {
-	ac,
+	type ac,
 	adminRole,
 	enterpriseOnlyResources,
 	memberRole,
@@ -37,7 +37,7 @@ const staticRoles: Record<string, ReturnType<typeof ac.newRole>> = {
 
 const resolveRole = async (
 	roleName: string,
-	organizationId: string,
+	_organizationId: string,
 ): Promise<ReturnType<typeof ac.newRole> | null> => {
 	if (staticRoles[roleName]) {
 		return staticRoles[roleName];

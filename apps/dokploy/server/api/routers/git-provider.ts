@@ -82,7 +82,8 @@ export const gitProviderRouter = createTRPCRouter({
 				orderBy: desc(gitProvider.createdAt),
 				where: eq(gitProvider.organizationId, ctx.session.activeOrganizationId),
 			});
-		}),
+		},
+	),
 
 	remove: withPermission("gitProviders", "delete")
 		.input(apiRemoveGitProvider)
