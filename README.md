@@ -35,13 +35,35 @@ pnpm crane:setup                                 # run migrations
 pnpm crane:dev                                   # start the app (Next + tRPC + WS)
 ```
 
-Quality gates:
+Quality gates (all green):
 
 ```bash
 pnpm typecheck            # tsc --noEmit across all packages
 pnpm format-and-lint      # biome check .
-pnpm test                 # vitest (apps/dokploy/__test__)
+pnpm test                 # vitest (462 unit tests; *.real.test.ts need Docker+Swarm)
 ```
+
+Auth notes: `BETTER_AUTH_SECRET` is **required** (the app fails closed without it — `openssl rand -hex 32`); passwords hash with **argon2id**; set `SECURE_COOKIES=true` when serving over HTTPS.
+
+## 📦 Container images
+
+Images publish to GitHub Container Registry under the fork's namespace:
+
+- `ghcr.io/ghaaf-labs/crane` — the main app
+- `ghcr.io/ghaaf-labs/crane-monitoring` — the Go metrics service
+- `ghcr.io/ghaaf-labs/crane-{cloud,schedule,server}` — supporting services
+
+## 📚 Documentation
+
+- [`AGENTS.md`](./AGENTS.md) — project overview, monorepo layout, build/test, hard rules, conventions.
+- [`docs/REVIEW.md`](./docs/REVIEW.md) — full engineering review (architecture, security, deps, quality, devops, schema, Rust).
+- [`docs/RUST-MIGRATION-ROADMAP.md`](./docs/RUST-MIGRATION-ROADMAP.md) — the phased TypeScript→Rust plan.
+- [`docs/security/`](./docs/security) — [password hashing](./docs/security/password-hashing.md) (argon2id) and [docker-socket hardening](./docs/security/docker-socket-hardening.md).
+- [`docs/relicense/`](./docs/relicense) — the relicensing/de-brand runbooks and the [remaining-fixes plan](./docs/relicense/REMAINING-FIXES-PLAN.md).
+
+## ✅ Fork status
+
+Relicensed to single Apache-2.0 (the `/proprietary` layer removed); de-branded to **Crane** (internal `@crane/*` packages, GHCR images, user-facing text/links); a round of security hardening landed; self-update + CI retargeted to GHCR. **Pending:** the OAuth/SSO rebuild (in Rust), the heavier dependency-major upgrades, and a long-tail i18n/brand-asset pass — see the [remaining-fixes plan](./docs/relicense/REMAINING-FIXES-PLAN.md). Runtime/data identifiers (`/etc/dokploy` paths, `DOKPLOY_*` env, docker/network names, DB columns) are intentionally unchanged to keep existing deployments working.
 
 ## 🤝 Contributing
 

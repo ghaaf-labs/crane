@@ -1,5 +1,15 @@
 # Crane Relicense — Remaining Fixes Execution Runbook
 
+> **Progress (2026-05-31):** ✅ DONE & pushed — STEP 1 (Go-module rename),
+> self-update→GHCR, STEP 3 (bcrypt→argon2id), STEP 4 (cosmetic de-brand text/links),
+> STEP 6 (docker-socket doc), and dependency batches **B1** (safe minors),
+> **B2** (better-auth 1.6.13), **B3a** (drizzle-orm 0.45.2), and the **B5 subset**
+> (vitest 4.1.7 + tsx). ⏳ PENDING — **B3** (drizzle-zod 0.5→0.8, non-advisory
+> 33-file churn), the rest of **B5** (esbuild 0.20→0.28, biome 2.1→2.4), **B4**
+> (octokit/inngest/swagger majors), **B6** (~30 UI majors), **B7** (React 18→19),
+> and the deferred tailwind 3→4 / TypeScript 5→6. B2/B4/B6/B7 need a running
+> instance to validate (auth/Git/UI/React smoke).
+
 > **Status:** ready to apply. Single ordered runbook consolidating 6 patch specs.
 > **Apply model:** the orchestrator applies each STEP, then runs that step's validation, then commits. On red, roll back the step (see per-step rollback) and stop.
 > **Read-only rule:** every step is code/config edits except the two doc deliverables (Step 3 doc + the already-written Step 6 doc). No runbook step invents new domains, Discord, or logo assets.
