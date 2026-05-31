@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import "dotenv/config";
@@ -14,6 +15,25 @@ import { fetchDeploymentJobs } from "./service.js";
 import { deploy } from "./utils.js";
 
 const app = new Hono();
+
+const API_KEY = process.env.API_KEY;
+// Fail closed: refuse to start without an API key rather than allowing every
+// request (an unset key previously made `undefined !== undefined` → allowed).
+if (!API_KEY && process.env.NODE_ENV !== "test") {
+	throw new Error(
+		"API_KEY is not set. The deploy API refuses to start without an API key.",
+	);
+}
+
+const safeEqual = (a: string, b: string): boolean => {
+	const ab = Buffer.from(a);
+	const bb = Buffer.from(b);
+	// Length check first; timingSafeEqual throws on unequal-length buffers.
+	if (ab.length !== bb.length) {
+		return false;
+	}
+	return timingSafeEqual(ab, bb);
+};
 
 // Initialize Inngest client
 export const inngest = new Inngest({
@@ -89,7 +109,7 @@ app.use(async (c, next) => {
 
 	const authHeader = c.req.header("X-API-Key");
 
-	if (process.env.API_KEY !== authHeader) {
+	if (!API_KEY || !authHeader || !safeEqual(authHeader, API_KEY)) {
 		return c.json({ message: "Invalid API Key" }, 403);
 	}
 
