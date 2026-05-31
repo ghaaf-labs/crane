@@ -1,6 +1,5 @@
 import type { IncomingMessage } from "node:http";
 import { apiKey } from "@better-auth/api-key";
-import { sso } from "@better-auth/sso";
 import * as bcrypt from "bcrypt";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -62,23 +61,14 @@ const { handler, api } = betterAuth({
 		accountLinking: {
 			enabled: true,
 			async trustedProviders() {
-				const fromDb = await getTrustedProviders();
-				return ["github", "google", ...fromDb];
+				// GitHub/Google OAuth removed (to be rebuilt in Rust); only
+				// DB-configured providers remain trusted for account linking.
+				return await getTrustedProviders();
 			},
 			allowDifferentEmails: true,
 		},
 	},
 	appName: "Dokploy",
-	socialProviders: {
-		github: {
-			clientId: process.env.GITHUB_CLIENT_ID as string,
-			clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
-		},
-		google: {
-			clientId: process.env.GOOGLE_CLIENT_ID as string,
-			clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-		},
-	},
 	logger: {
 		disabled: process.env.NODE_ENV === "production",
 	},
@@ -389,7 +379,6 @@ const { handler, api } = betterAuth({
 			enableMetadata: true,
 			references: "user",
 		}),
-		sso(),
 		twoFactor(),
 		organization({
 			ac,
