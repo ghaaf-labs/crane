@@ -178,8 +178,11 @@ func ConvertToSystemMetrics(metric database.ServerMetric) SystemMetrics {
 		Uptime:           metric.Uptime,
 		DiskUsed:         fmt.Sprintf("%.2f", metric.DiskUsed),
 		TotalDisk:        fmt.Sprintf("%.2f", metric.TotalDisk),
-		NetworkIn:        fmt.Sprintf("%.2f", metric.NetworkIn),
-		NetworkOut:       fmt.Sprintf("%.2f", metric.NetworkOut),
+		// Higher precision than the other fields: networkIn/Out are cumulative MB
+		// counters and the UI derives a per-second rate from consecutive deltas,
+		// so coarse rounding would quantize low-traffic throughput to zero.
+		NetworkIn:        fmt.Sprintf("%.3f", metric.NetworkIn),
+		NetworkOut:       fmt.Sprintf("%.3f", metric.NetworkOut),
 		Timestamp:        metric.Timestamp,
 	}
 }

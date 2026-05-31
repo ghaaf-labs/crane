@@ -13,7 +13,7 @@ import {
 	ChartLegendContent,
 	ChartTooltip,
 } from "@/components/ui/chart";
-import { formatTimestamp } from "@/lib/utils";
+import { formatNetworkRate, formatTimestamp } from "@/lib/utils";
 
 interface NetworkChartProps {
 	data: any[];
@@ -38,8 +38,8 @@ export function NetworkChart({ data }: NetworkChartProps) {
 			<CardHeader className="border-b py-5">
 				<CardTitle>Network</CardTitle>
 				<CardDescription>
-					Network Traffic: ↑ {latestData.networkOut} KB/s ↓{" "}
-					{latestData.networkIn} KB/s
+					Network Traffic: ↑ {formatNetworkRate(latestData.networkOut ?? 0)} ↓{" "}
+					{formatNetworkRate(latestData.networkIn ?? 0)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
@@ -83,7 +83,7 @@ export function NetworkChart({ data }: NetworkChartProps) {
 							minTickGap={32}
 							tickFormatter={(value) => formatTimestamp(value)}
 						/>
-						<YAxis tickFormatter={(value) => `${value} KB/s`} />
+						<YAxis tickFormatter={(value) => formatNetworkRate(value)} />
 						<ChartTooltip
 							cursor={false}
 							content={({ active, payload, label }) => {
@@ -105,8 +105,8 @@ export function NetworkChart({ data }: NetworkChartProps) {
 														Network
 													</span>
 													<span className="font-bold">
-														↑ {data.networkOut} KB/s
-														<br />↓ {data.networkIn} KB/s
+														↑ {formatNetworkRate(data.networkOut ?? 0)}
+														<br />↓ {formatNetworkRate(data.networkIn ?? 0)}
 													</span>
 												</div>
 											</div>

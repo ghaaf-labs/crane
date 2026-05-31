@@ -7,6 +7,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { networkRatePerSecond } from "@/lib/utils";
 import { api } from "@/utils/api";
 import { CPUChart } from "./cpu-chart";
 import { DiskChart } from "./disk-chart";
@@ -88,26 +89,57 @@ export const ShowPaidMonitoring = ({
 	useEffect(() => {
 		if (!data) return;
 
-		const formattedData = data.map((metric: SystemMetrics) => ({
-			timestamp: metric.timestamp,
-			cpu: Number.parseFloat(metric.cpu),
-			cpuModel: metric.cpuModel,
-			cpuCores: metric.cpuCores,
-			cpuPhysicalCores: metric.cpuPhysicalCores,
-			cpuSpeed: metric.cpuSpeed,
-			os: metric.os,
-			distro: metric.distro,
-			kernel: metric.kernel,
-			arch: metric.arch,
-			memUsed: Number.parseFloat(metric.memUsed),
-			memUsedGB: Number.parseFloat(metric.memUsedGB),
-			memTotal: Number.parseFloat(metric.memTotal),
-			networkIn: Number.parseFloat(metric.networkIn),
-			networkOut: Number.parseFloat(metric.networkOut),
-			diskUsed: Number.parseFloat(metric.diskUsed),
-			totalDisk: Number.parseFloat(metric.totalDisk),
-			uptime: metric.uptime,
-		}));
+		const MB = 1024 * 1024;
+
+		const formattedData = data.map((metric: SystemMetrics, index: number) => {
+			// The monitoring service reports networkIn/Out as cumulative MB since
+			// boot. Derive an instantaneous bytes/second rate from the delta to the
+			// previous sample so the chart shows throughput, not an ever-rising total.
+			const prev = index > 0 ? data[index - 1] : undefined;
+			const currInBytes = Number.parseFloat(metric.networkIn) * MB;
+			const currOutBytes = Number.parseFloat(metric.networkOut) * MB;
+			const currTimeMs = new Date(metric.timestamp).getTime();
+
+			let networkIn = 0;
+			let networkOut = 0;
+			if (prev) {
+				const prevTimeMs = new Date(prev.timestamp).getTime();
+				networkIn = networkRatePerSecond(
+					Number.parseFloat(prev.networkIn) * MB,
+					currInBytes,
+					prevTimeMs,
+					currTimeMs,
+				);
+				networkOut = networkRatePerSecond(
+					Number.parseFloat(prev.networkOut) * MB,
+					currOutBytes,
+					prevTimeMs,
+					currTimeMs,
+				);
+			}
+
+			return {
+				timestamp: metric.timestamp,
+				cpu: Number.parseFloat(metric.cpu),
+				cpuModel: metric.cpuModel,
+				cpuCores: metric.cpuCores,
+				cpuPhysicalCores: metric.cpuPhysicalCores,
+				cpuSpeed: metric.cpuSpeed,
+				os: metric.os,
+				distro: metric.distro,
+				kernel: metric.kernel,
+				arch: metric.arch,
+				memUsed: Number.parseFloat(metric.memUsed),
+				memUsedGB: Number.parseFloat(metric.memUsedGB),
+				memTotal: Number.parseFloat(metric.memTotal),
+				// bytes/second throughput (see formatNetworkRate in the chart)
+				networkIn,
+				networkOut,
+				diskUsed: Number.parseFloat(metric.diskUsed),
+				totalDisk: Number.parseFloat(metric.totalDisk),
+				uptime: metric.uptime,
+			};
+		});
 
 		// @ts-ignore
 		setHistoricalData(formattedData);
