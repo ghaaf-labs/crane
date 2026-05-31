@@ -55,7 +55,7 @@ export const BuildSuccessEmail = ({
 								}
 								width="100"
 								height="50"
-								alt="Dokploy"
+								alt="Crane"
 								className="my-0 mx-auto"
 							/>
 						</Section>

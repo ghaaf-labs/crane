@@ -262,7 +262,7 @@ const Register = ({ isCloud }: Props) => {
 									Need help?
 									<Link
 										className="underline"
-										href="https://dokploy.com"
+										href="https://github.com/ghaaf-labs/crane"
 										target="_blank"
 									>
 										Contact us

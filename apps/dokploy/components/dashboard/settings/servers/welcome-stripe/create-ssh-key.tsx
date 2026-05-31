@@ -172,7 +172,7 @@ export const CreateSSHKey = () => {
 											etc.)
 										</p>
 										<Link
-											href="https://docs.dokploy.com/docs/core/remote-servers/instructions#requirements"
+											href="https://github.com/ghaaf-labs/crane"
 											target="_blank"
 											className="text-primary flex flex-row gap-2 mt-2"
 										>

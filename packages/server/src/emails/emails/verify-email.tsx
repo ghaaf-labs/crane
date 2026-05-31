@@ -22,7 +22,7 @@ export const VerifyEmailTemplate = ({
 	userName = "User",
 	verificationUrl = "https://app.dokploy.com/verify",
 }: TemplateProps) => {
-	const previewText = "Verify your email address to get started with Dokploy";
+	const previewText = "Verify your email address to get started with Crane";
 	return (
 		<Html>
 			<Head />
@@ -46,7 +46,7 @@ export const VerifyEmailTemplate = ({
 								src="https://raw.githubusercontent.com/Dokploy/website/refs/heads/main/apps/docs/public/logo-dokploy-blackpng.png"
 								width="190"
 								height="120"
-								alt="Dokploy"
+								alt="Crane"
 								className="my-0 mx-auto"
 							/>
 						</Section>
@@ -57,7 +57,7 @@ export const VerifyEmailTemplate = ({
 								Verify Your Email
 							</Heading>
 							<Text className="text-[#71717a] text-[14px] leading-[22px] m-0 mb-[24px]">
-								Hello {userName}, thank you for signing up for Dokploy. Please
+								Hello {userName}, thank you for signing up for Crane. Please
 								verify your email address to activate your account.
 							</Text>
 
@@ -85,10 +85,10 @@ export const VerifyEmailTemplate = ({
 							<Text className="text-[#a1a1aa] text-[12px] leading-[18px] m-0">
 								This is an automated email from{" "}
 								<Link
-									href="https://dokploy.com"
+									href="https://github.com/ghaaf-labs/crane"
 									className="text-[#71717a] underline"
 								>
-									Dokploy Cloud
+									Crane
 								</Link>
 								. If you didn't create an account, you can safely ignore this
 								email.

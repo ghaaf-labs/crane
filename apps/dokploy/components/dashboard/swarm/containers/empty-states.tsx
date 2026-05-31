@@ -17,7 +17,7 @@ export const DocLinks = () => (
 		</p>
 		<div className="flex flex-wrap gap-x-4 gap-y-1">
 			<a
-				href="https://docs.dokploy.com/docs/core"
+				href="https://github.com/ghaaf-labs/crane"
 				target="_blank"
 				rel="noopener noreferrer"
 				className="text-xs text-primary underline underline-offset-4 inline-flex items-center gap-1"

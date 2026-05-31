@@ -23,7 +23,7 @@ async function generateOpenAPI() {
 			title: "Dokploy API",
 			version: "1.0.0",
 			baseUrl: "https://your-dokploy-instance.com/api",
-			docsUrl: "https://docs.dokploy.com/api",
+			docsUrl: "https://github.com/ghaaf-labs/crane",
 			tags: [
 				"admin",
 				"docker",
@@ -73,11 +73,11 @@ async function generateOpenAPI() {
 			version: "1.0.0",
 			contact: {
 				name: "Dokploy Team",
-				url: "https://dokploy.com",
+				url: "https://github.com/ghaaf-labs/crane",
 			},
 			license: {
 				name: "Apache 2.0",
-				url: "https://github.com/dokploy/dokploy/blob/canary/LICENSE",
+				url: "https://github.com/ghaaf-labs/crane/blob/main/LICENSE",
 			},
 		};
 
@@ -105,7 +105,7 @@ async function generateOpenAPI() {
 		// Add external docs
 		openApiDocument.externalDocs = {
 			description: "Full documentation",
-			url: "https://docs.dokploy.com",
+			url: "https://github.com/ghaaf-labs/crane",
 		};
 
 		// Write to root of repo

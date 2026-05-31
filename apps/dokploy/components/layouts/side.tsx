@@ -10,7 +10,6 @@ import {
 	Boxes,
 	ChevronRight,
 	ChevronsUpDown,
-	CircleHelp,
 	Clock,
 	CreditCard,
 	Database,
@@ -389,13 +388,8 @@ const MENU: Menu = {
 	help: [
 		{
 			name: "Documentation",
-			url: "https://docs.dokploy.com/docs/core",
+			url: "https://github.com/ghaaf-labs/crane",
 			icon: BookIcon,
-		},
-		{
-			name: "Support",
-			url: "https://discord.gg/2tBnJ3jDJc",
-			icon: CircleHelp,
 		},
 	],
 } as const;

@@ -38,7 +38,7 @@ const MyApp = ({
 				`}
 			</style>
 			<Head>
-				<title>Dokploy</title>
+				<title>Crane</title>
 			</Head>
 			<ThemeProvider
 				attribute="class"

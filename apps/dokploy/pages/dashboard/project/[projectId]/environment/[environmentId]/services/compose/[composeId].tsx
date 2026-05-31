@@ -90,7 +90,7 @@ const Service = (
 		projectId: data?.environment?.projectId || "",
 	});
 	const { config: whitelabeling } = useWhitelabeling();
-	const appName = whitelabeling?.appName || "Dokploy";
+	const appName = whitelabeling?.appName || "Crane";
 	const environmentDropdownItems =
 		environments?.map((env) => ({
 			name: env.name,

@@ -44,12 +44,12 @@ export const DokployRestartEmail = ({
 								}
 								width="100"
 								height="50"
-								alt="Dokploy"
+								alt="Crane"
 								className="my-0 mx-auto"
 							/>
 						</Section>
 						<Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">
-							Dokploy Server Restart
+							Crane Server Restart
 						</Heading>
 						<Text className="text-black text-[14px] leading-[24px]">
 							Hello,
