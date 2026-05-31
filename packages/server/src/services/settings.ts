@@ -44,78 +44,98 @@ export const getServiceImageDigest = async () => {
 	return currentDigest;
 };
 
-/** Returns latest version number and information whether server update is available by comparing current image's digest against digest for provided image tag via Docker hub API. */
+/** Container image published for this fork (GHCR). */
+export const CRANE_IMAGE = "ghcr.io/ghaaf-labs/crane";
+const GHCR_REPO = "ghaaf-labs/crane";
+
+/** Obtain an anonymous pull token for a public GHCR repository. */
+const getGhcrPullToken = async (repo: string): Promise<string> => {
+	const res = await fetch(
+		`https://ghcr.io/token?scope=repository:${repo}:pull&service=ghcr.io`,
+	);
+	const data = (await res.json()) as { token?: string };
+	if (!data.token) {
+		throw new Error("Could not obtain a GHCR pull token");
+	}
+	return data.token;
+};
+
+/** List the tag names for a GHCR repository (OCI tags/list — names only, no digests). */
+const getGhcrTags = async (repo: string, token: string): Promise<string[]> => {
+	const res = await fetch(`https://ghcr.io/v2/${repo}/tags/list?n=1000`, {
+		headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+	});
+	const data = (await res.json()) as { tags?: string[] };
+	return data.tags ?? [];
+};
+
+/** Resolve the manifest digest for a tag (mirrors Docker Hub's per-tag digest). */
+const getGhcrManifestDigest = async (
+	repo: string,
+	tag: string,
+	token: string,
+): Promise<string | null> => {
+	const res = await fetch(`https://ghcr.io/v2/${repo}/manifests/${tag}`, {
+		method: "HEAD",
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: [
+				"application/vnd.oci.image.index.v1+json",
+				"application/vnd.docker.distribution.manifest.list.v2+json",
+				"application/vnd.oci.image.manifest.v1+json",
+				"application/vnd.docker.distribution.manifest.v2+json",
+			].join(", "),
+		},
+	});
+	return res.headers.get("docker-content-digest");
+};
+
+/** Returns the latest version and whether a server update is available, by querying GHCR. Stable releases compare the highest published v* tag via semver; canary/feature compare the running service's image digest against the tag's manifest digest. */
 export const getUpdateData = async (
 	currentVersion: string,
 ): Promise<IUpdateData> => {
 	try {
-		const baseUrl =
-			"https://hub.docker.com/v2/repositories/dokploy/dokploy/tags";
-		let url: string | null = `${baseUrl}?page_size=100`;
-		let allResults: { digest: string; name: string }[] = [];
-
-		// Fetch all tags from Docker Hub
-		while (url) {
-			const response = await fetch(url, {
-				method: "GET",
-				headers: { "Content-Type": "application/json" },
-			});
-
-			const data = (await response.json()) as {
-				next: string | null;
-				results: { digest: string; name: string }[];
-			};
-
-			allResults = allResults.concat(data.results);
-			url = data?.next;
-		}
+		const token = await getGhcrPullToken(GHCR_REPO);
+		const tags = await getGhcrTags(GHCR_REPO, token);
 
 		const currentImageTag = getDokployImageTag();
 
-		// Special handling for canary and feature branches
-		// For development versions (canary/feature), don't perform update checks
-		// These are unstable versions that change frequently, and users on these
-		// branches are expected to manually manage updates
+		// Special handling for canary and feature branches.
+		// These are unstable, frequently-changing tags, so we compare the running
+		// service's image digest against the tag's current manifest digest.
 		if (currentImageTag === "canary" || currentImageTag === "feature") {
+			if (!tags.includes(currentImageTag)) {
+				return DEFAULT_UPDATE_DATA;
+			}
 			const currentDigest = await getServiceImageDigest();
-			const latestDigest = allResults.find(
-				(t) => t.name === currentImageTag,
-			)?.digest;
+			const latestDigest = await getGhcrManifestDigest(
+				GHCR_REPO,
+				currentImageTag,
+				token,
+			);
 			if (!latestDigest) {
 				return DEFAULT_UPDATE_DATA;
 			}
-			if (currentDigest !== latestDigest) {
-				return {
-					latestVersion: currentImageTag,
-					updateAvailable: true,
-				};
-			}
 			return {
 				latestVersion: currentImageTag,
-				updateAvailable: false,
+				updateAvailable: currentDigest !== latestDigest,
 			};
 		}
 
-		// For stable versions, use semver comparison
-		// Find the "latest" tag and get its digest
-		const latestTag = allResults.find((t) => t.name === "latest");
+		// Stable releases: GHCR's tags/list has no digests, so pick the highest
+		// published v* semver tag (equivalent to the tag `latest` points at under
+		// the normal release invariant).
+		const versionTags = tags
+			.filter((t) => t.startsWith("v") && semver.valid(semver.clean(t) ?? ""))
+			.sort((a, b) =>
+				semver.rcompare(semver.clean(a) as string, semver.clean(b) as string),
+			);
 
-		if (!latestTag) {
+		const latestVersion = versionTags[0];
+		if (!latestVersion) {
 			return DEFAULT_UPDATE_DATA;
 		}
 
-		// Find the versioned tag (v0.x.x) that has the same digest as "latest"
-		const latestVersionTag = allResults.find(
-			(t) => t.digest === latestTag.digest && t.name.startsWith("v"),
-		);
-
-		if (!latestVersionTag) {
-			return DEFAULT_UPDATE_DATA;
-		}
-
-		const latestVersion = latestVersionTag.name;
-
-		// Use semver to compare versions for stable releases
 		const cleanedCurrent = semver.clean(currentVersion);
 		const cleanedLatest = semver.clean(latestVersion);
 
@@ -123,7 +143,6 @@ export const getUpdateData = async (
 			return DEFAULT_UPDATE_DATA;
 		}
 
-		// Check if the latest version is greater than the current version
 		const updateAvailable = semver.gt(cleanedLatest, cleanedCurrent);
 
 		return {
@@ -295,7 +314,7 @@ export const reloadDockerResource = async (
 				imageTag = currentImageTag;
 			}
 
-			command = `docker service update --force --image dokploy/dokploy:${imageTag} ${resourceName}`;
+			command = `docker service update --force --image ${CRANE_IMAGE}:${imageTag} ${resourceName}`;
 		} else {
 			command = `docker service update --force ${resourceName}`;
 		}

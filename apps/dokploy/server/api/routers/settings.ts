@@ -531,7 +531,7 @@ export const settingsRouter = createTRPCRouter({
 				"update",
 				"--force",
 				"--image",
-				`dokploy/dokploy:${data.latestVersion}`,
+				`ghcr.io/ghaaf-labs/crane:${data.latestVersion}`,
 				"dokploy",
 			]);
 			await audit(ctx, {
