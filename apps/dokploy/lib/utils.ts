@@ -80,6 +80,30 @@ export function bytesFromDockerSize(value: number, unit: string): number {
 }
 
 /**
+ * Normalises a combined size string (e.g. `"1.5kB"`, `"3.4MiB"`, `"512B"`) to a
+ * byte count. The free-tier monitoring path stores docker's NetIO/BlockIO
+ * fields as raw unit-bearing strings, so a numeric series must parse them
+ * before use. Accepts a number (returned as-is) or a malformed value (→ 0).
+ */
+export function bytesFromSizeString(
+	sizeString: string | number | null | undefined,
+): number {
+	if (typeof sizeString === "number") {
+		return Number.isFinite(sizeString) ? sizeString : 0;
+	}
+	if (!sizeString || typeof sizeString !== "string") return 0;
+	// Match docker's size grammar in one pass — a plain decimal followed by an
+	// optional alphabetic unit ("1.5kB", "512B", "0", "3.4 MiB"). Anything else
+	// (signs, exponents, "N/A", "1MB/s") fails to match and yields 0 rather than
+	// letting parseFloat and a separate unit-strip disagree.
+	const match = sizeString.trim().match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]*)$/);
+	if (!match) return 0;
+	const value = Number.parseFloat(match[1] as string);
+	if (!Number.isFinite(value)) return 0;
+	return bytesFromDockerSize(value, match[2] as string);
+}
+
+/**
  * Human-readable network throughput from a bytes/second value, scaling the unit
  * (B/s → KB/s → MB/s → GB/s) so the number stays readable at any magnitude.
  */

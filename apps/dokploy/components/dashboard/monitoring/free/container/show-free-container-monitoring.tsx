@@ -58,16 +58,19 @@ export interface DockerStats {
 		time: string;
 	};
 	block: {
+		// stored as cumulative docker BlockIO strings (e.g. "1.2MB"); the default
+		// state seeds them as 0, hence number | string.
 		value: {
-			readMb: number;
-			writeMb: number;
+			readMb: number | string;
+			writeMb: number | string;
 		};
 		time: string;
 	};
 	network: {
+		// stored as cumulative docker NetIO strings (e.g. "1.2kB"); see above.
 		value: {
-			inputMb: number;
-			outputMb: number;
+			inputMb: number | string;
+			outputMb: number | string;
 		};
 		time: string;
 	};
@@ -318,7 +321,7 @@ export const ContainerFreeMonitoring = ({
 					<CardContent>
 						<div className="flex flex-col gap-2 w-full">
 							<span className="text-sm text-muted-foreground">
-								{`In MB: ${currentData.network.value.inputMb}  / Out MB: ${currentData.network.value.outputMb} `}
+								{`In: ${currentData.network.value.inputMb}  / Out: ${currentData.network.value.outputMb} `}
 							</span>
 							<DockerNetworkChart accumulativeData={accumulativeData.network} />
 						</div>

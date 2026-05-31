@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	bytesFromDockerSize,
+	bytesFromSizeString,
 	formatNetworkRate,
 	networkRatePerSecond,
 } from "@/lib/utils";
@@ -106,5 +107,53 @@ describe("bytesFromDockerSize", () => {
 		const rate = networkRatePerSecond(prev, curr, 0, 2000);
 		expect(rate).toBe(1_000_000);
 		expect(formatNetworkRate(rate)).toBe("977 KB/s"); // 1e6 / 1024 ≈ 976.6
+	});
+});
+
+describe("bytesFromSizeString", () => {
+	it("parses a combined docker size string with its unit", () => {
+		expect(bytesFromSizeString("1.5kB")).toBe(1500);
+		expect(bytesFromSizeString("2MB")).toBe(2_000_000);
+		expect(bytesFromSizeString("512B")).toBe(512);
+		expect(bytesFromSizeString("3.4MiB")).toBe(3.4 * 1024 * 1024);
+	});
+
+	it("handles a space between value and unit", () => {
+		expect(bytesFromSizeString("1.2 GB")).toBe(1_200_000_000);
+	});
+
+	it("passes through finite numbers and seeds 0 from default state", () => {
+		expect(bytesFromSizeString(0)).toBe(0);
+		expect(bytesFromSizeString(12345)).toBe(12345);
+	});
+
+	it("returns 0 for null/undefined/empty/garbage", () => {
+		expect(bytesFromSizeString(null)).toBe(0);
+		expect(bytesFromSizeString(undefined)).toBe(0);
+		expect(bytesFromSizeString("")).toBe(0);
+		expect(bytesFromSizeString("N/A")).toBe(0);
+	});
+
+	it("treats a unitless numeric string as bytes", () => {
+		expect(bytesFromSizeString("4096")).toBe(4096);
+		expect(bytesFromSizeString("0")).toBe(0);
+	});
+
+	it("rejects signed/exponent/garbage forms instead of mis-scaling them", () => {
+		// "1e3B" must NOT become 1000 exabytes; "+1MB" must NOT silently become 1 B
+		expect(bytesFromSizeString("1e3B")).toBe(0);
+		expect(bytesFromSizeString("+1MB")).toBe(0);
+		expect(bytesFromSizeString("-5MB")).toBe(0);
+		expect(bytesFromSizeString("1MB/s")).toBe(0);
+		expect(bytesFromSizeString("1foo")).toBe(1); // number + unknown unit → bytes
+	});
+
+	it("composes with networkRatePerSecond across mixed-unit samples", () => {
+		// 900 kB then 1.2 MB cumulative over 3s: raw numbers would be 900 -> 1.2
+		// (a fake drop); as bytes it's a real +300 kB / 3s = 100 kB/s.
+		const prev = bytesFromSizeString("900kB");
+		const curr = bytesFromSizeString("1.2MB");
+		const rate = networkRatePerSecond(prev, curr, 0, 3000);
+		expect(rate).toBe(100_000);
 	});
 });
