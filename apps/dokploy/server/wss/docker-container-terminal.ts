@@ -1,5 +1,6 @@
 import type http from "node:http";
 import { findServerById, IS_CLOUD, validateRequest } from "@dokploy/server";
+import { findMemberByUserId } from "@dokploy/server/services/permission";
 import { spawn } from "node-pty";
 import { Client } from "ssh2";
 import { WebSocketServer } from "ws";
@@ -54,7 +55,18 @@ export const setupDockerContainerTerminalWebSocketServer = (
 		// Default to 'sh' if no shell specified
 		const shell = activeWay || "sh";
 
-		if (!user || !session) {
+		if (!user || !session || !session.activeOrganizationId) {
+			ws.close();
+			return;
+		}
+
+		// RBAC: container exec is arbitrary code execution inside the container,
+		// so restrict it to organization owners/admins.
+		const member = await findMemberByUserId(
+			user.id,
+			session.activeOrganizationId,
+		).catch(() => null);
+		if (!member || (member.role !== "owner" && member.role !== "admin")) {
 			ws.close();
 			return;
 		}

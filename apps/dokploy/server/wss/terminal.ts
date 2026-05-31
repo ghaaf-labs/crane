@@ -5,6 +5,7 @@ import {
 	IS_CLOUD,
 	validateRequest,
 } from "@dokploy/server";
+import { findMemberByUserId } from "@dokploy/server/services/permission";
 import { publicIpv4, publicIpv6 } from "public-ip";
 import { Client, type ConnectConfig } from "ssh2";
 import { WebSocketServer } from "ws";
@@ -88,7 +89,18 @@ export const setupTerminalWebSocketServer = (
 		const url = new URL(req.url || "", `http://${req.headers.host}`);
 		const serverId = url.searchParams.get("serverId");
 		const { user, session } = await validateRequest(req);
-		if (!user || !session || !serverId) {
+		if (!user || !session || !serverId || !session.activeOrganizationId) {
+			ws.close();
+			return;
+		}
+
+		// RBAC: a host/server terminal grants an interactive shell, so restrict it
+		// to organization owners/admins instead of any authenticated member.
+		const member = await findMemberByUserId(
+			user.id,
+			session.activeOrganizationId,
+		).catch(() => null);
+		if (!member || (member.role !== "owner" && member.role !== "admin")) {
 			ws.close();
 			return;
 		}
