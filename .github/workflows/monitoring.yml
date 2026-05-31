@@ -5,6 +5,7 @@ on:
     branches: [main, canary]
 
 permissions:
+  contents: read
   packages: write
 
 env:
