@@ -5,7 +5,15 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
 	test: {
 		include: ["__test__/**/*.test.ts"], // Incluir solo los archivos de test en el directorio __test__
-		exclude: ["**/node_modules/**", "**/dist/**", "**/.docker/**"],
+		// *.real.test.ts are real-Docker/Swarm integration tests; keep them out of
+		// the default unit run (and CI) — invoke them explicitly when a Docker
+		// daemon + swarm are available.
+		exclude: [
+			"**/node_modules/**",
+			"**/dist/**",
+			"**/.docker/**",
+			"**/*.real.test.ts",
+		],
 		pool: "forks",
 		setupFiles: [path.resolve(__dirname, "setup.ts")],
 	},
