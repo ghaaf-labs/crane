@@ -63,7 +63,6 @@
 			"@scarf/scarf",
 			"@tree-sitter-grammars/tree-sitter-yaml",
 			"bcrypt",
-			"better-sqlite3",
 			"core-js-pure",
 			"cpu-features",
 			"esbuild",
