@@ -1,6 +1,5 @@
 import type { IncomingMessage } from "node:http";
 import { apiKey } from "@better-auth/api-key";
-import * as bcrypt from "bcrypt";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
@@ -27,6 +26,7 @@ import {
 import { getPublicIpWithFallback } from "../wss/utils";
 import { ac, adminRole, memberRole, ownerRole } from "./access-control";
 import { betterAuthSecret } from "./auth-secret";
+import { hashPassword, verifyPassword } from "./password";
 
 const { handler, api } = betterAuth({
 	database: drizzleAdapter(db, {
@@ -119,10 +119,16 @@ const { handler, api } = betterAuth({
 		requireEmailVerification: IS_CLOUD && process.env.NODE_ENV === "production",
 		password: {
 			async hash(password) {
-				return bcrypt.hashSync(password, 10);
+				// New/changed passwords are stored with argon2id.
+				return hashPassword(password);
 			},
 			async verify({ hash, password }) {
-				return bcrypt.compareSync(password, hash);
+				// Accepts BOTH argon2id (new) and legacy bcrypt hashes so every
+				// existing login keeps working. better-auth has no rehash hook in
+				// the password config, so legacy bcrypt hashes migrate to argon2
+				// the next time the password is set/changed.
+				const { ok } = await verifyPassword({ hash, password });
+				return ok;
 			},
 		},
 		sendResetPassword: async ({ user, url }) => {

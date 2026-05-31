@@ -7,12 +7,14 @@ import {
 	getDokployUrl,
 	getUserByToken,
 	getWebServerSettings,
+	hashPassword,
 	IS_CLOUD,
 	removeUserById,
 	renderInvitationEmail,
 	sendEmailNotification,
 	sendResendNotification,
 	updateUser,
+	verifyPassword,
 } from "@crane/server";
 import { db } from "@crane/server/db";
 import {
@@ -31,7 +33,6 @@ import {
 	resolvePermissions,
 } from "@crane/server/services/permission";
 import { TRPCError } from "@trpc/server";
-import * as bcrypt from "bcrypt";
 import { and, asc, eq, gt, ne } from "drizzle-orm";
 import { z } from "zod";
 import { audit } from "@/server/api/utils/audit";
@@ -205,10 +206,10 @@ export const userRouter = createTRPCRouter({
 				const currentAuth = await db.query.account.findFirst({
 					where: eq(account.userId, ctx.user.id),
 				});
-				const correctPassword = bcrypt.compareSync(
-					input.currentPassword || "",
-					currentAuth?.password || "",
-				);
+				const { ok: correctPassword } = await verifyPassword({
+					hash: currentAuth?.password || "",
+					password: input.currentPassword || "",
+				});
 
 				if (!correctPassword) {
 					throw new TRPCError({
@@ -226,7 +227,7 @@ export const userRouter = createTRPCRouter({
 				await db
 					.update(account)
 					.set({
-						password: bcrypt.hashSync(input.password, 10),
+						password: await hashPassword(input.password),
 					})
 					.where(eq(account.userId, ctx.user.id));
 

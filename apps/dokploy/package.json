@@ -100,6 +100,7 @@
 		"adm-zip": "^0.5.16",
 		"ai": "^6.0.86",
 		"ai-sdk-ollama": "^3.7.0",
+		"@node-rs/argon2": "^2.0.2",
 		"bcrypt": "5.1.1",
 		"better-auth": "1.5.4",
 		"bl": "6.0.11",

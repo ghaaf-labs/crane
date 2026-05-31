@@ -7,9 +7,9 @@ import {
 	user,
 } from "@crane/server/db/schema";
 import { TRPCError } from "@trpc/server";
-import * as bcrypt from "bcrypt";
 import { and, eq } from "drizzle-orm";
 import { auth } from "../lib/auth";
+import { hashPassword } from "../lib/password";
 
 export type User = typeof user.$inferSelect;
 
@@ -449,7 +449,7 @@ export const createOrganizationUserWithCredentials = async ({
 		await tx.insert(account).values({
 			userId: createdUser.id,
 			providerId: "credential",
-			password: bcrypt.hashSync(password, 10),
+			password: await hashPassword(password),
 			createdAt: now,
 			updatedAt: now,
 		});
