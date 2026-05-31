@@ -67,7 +67,7 @@ const { handler, api } = betterAuth({
 			allowDifferentEmails: true,
 		},
 	},
-	appName: "Dokploy",
+	appName: "Crane",
 	logger: {
 		disabled: process.env.NODE_ENV === "production",
 	},

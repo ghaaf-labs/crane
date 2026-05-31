@@ -1,64 +1,52 @@
-<div align="center">
-  <a href="https://dokploy.com">
-    <img src=".github/sponsors/logo.png" alt="Dokploy - Open Source Alternative to Vercel, Heroku and Netlify." width="100%"  />
-  </a>
-  </br>
-  </br>
-  <p>Join us on Discord for help, feedback, and discussions!</p>
-  <a href="https://discord.gg/2tBnJ3jDJc">
-    <img src="https://discordapp.com/api/guilds/1234073262418563112/widget.png?style=banner2" alt="Discord Shield"/>
-  </a>
-</div>
-<br />
+# Crane
 
+**Crane** is a free, self-hostable Platform as a Service (PaaS) that simplifies the deployment and management of applications and databases.
 
-Dokploy is a free, self-hostable Platform as a Service (PaaS) that simplifies the deployment and management of applications and databases.
+It is an **Apache-2.0** hard fork of [Dokploy](https://github.com/dokploy/dokploy) (v0.29.6). This fork removes the upstream open-core `/proprietary` (DSAL) layer so the entire codebase is single-license Apache-2.0, and is progressively being rewritten from TypeScript toward Rust. See [`AGENTS.md`](./AGENTS.md) for the project overview and contributor guide, and [`docs/`](./docs) for the engineering review, relicensing plan, and Rust migration roadmap.
+
+> Crane is not affiliated with or endorsed by Dokploy. "Dokploy" and its logo are trademarks of Dokploy Technology, Inc.
 
 ## ✨ Features
 
-Dokploy includes multiple features to make your life easier.
-
 - **Applications**: Deploy any type of application (Node.js, PHP, Python, Go, Ruby, etc.).
-- **Databases**: Create and manage databases with support for MySQL, PostgreSQL, MongoDB, MariaDB, libsql, and Redis.
-- **Backups**: Automate backups for databases to an external storage destination.
-- **Docker Compose**: Native support for Docker Compose to manage complex applications.
-- **Multi Node**: Scale applications to multiple nodes using Docker Swarm to manage the cluster.
-- **Templates**: Deploy open-source templates (Plausible, Pocketbase, Calcom, etc.) with a single click.
-- **Traefik Integration**: Automatically integrates with Traefik for routing and load balancing.
-- **Real-time Monitoring**: Monitor CPU, memory, storage, and network usage for every resource.
-- **Docker Management**: Easily deploy and manage Docker containers.
-- **CLI/API**: Manage your applications and databases using the command line or through the API.
-- **Notifications**: Get notified when your deployments succeed or fail (via Slack, Discord, Telegram, Email, etc.).
-- **Multi Server**: Deploy and manage your applications remotely to external servers.
-- **Self-Hosted**: Self-host Dokploy on your VPS.
+- **Databases**: Create and manage MySQL, PostgreSQL, MongoDB, MariaDB, libSQL, and Redis.
+- **Backups**: Automate database backups to external storage.
+- **Docker Compose**: Native support for managing complex applications.
+- **Multi Node**: Scale applications across nodes with Docker Swarm.
+- **Templates**: Deploy open-source templates (Plausible, PocketBase, Cal.com, etc.) in one click.
+- **Traefik Integration**: Automatic routing and load balancing.
+- **Real-time Monitoring**: CPU, memory, storage, and network usage per resource.
+- **Docker Management**: Deploy and manage Docker containers.
+- **CLI/API**: Manage applications and databases from the command line or API.
+- **Notifications**: Deployment success/failure alerts (Slack, Discord, Telegram, Email, etc.).
+- **Multi Server**: Deploy and manage applications on remote servers.
+- **Self-Hosted**: Run it on your own VPS.
 
-## 🚀 Getting Started
+> **Note:** OAuth/SSO sign-in and the enterprise features (custom roles, audit-log viewer, whitelabeling, license keys) from upstream's `/proprietary` layer have been removed. Authentication is email/password; OAuth/SSO are planned to be rebuilt in Rust.
 
-To get started, run the following command on a VPS:
+## 🚀 Development
 
-Want to skip the installation process? [Try the Dokploy Cloud](https://app.dokploy.com).
+Requirements: Node `^24.4.0`, pnpm `10.22.0`, a PostgreSQL instance, and Docker.
 
 ```bash
-curl -sSL https://dokploy.com/install.sh | bash
+pnpm install
+cp apps/dokploy/.env.example apps/dokploy/.env   # set BETTER_AUTH_SECRET (openssl rand -hex 32)
+pnpm crane:setup                                 # run migrations
+pnpm crane:dev                                   # start the app (Next + tRPC + WS)
 ```
 
-For detailed documentation, visit [docs.dokploy.com](https://docs.dokploy.com).
+Quality gates:
 
-
-[Github Sponsors](https://github.com/sponsors/Siumauricio)
-
-### Contributors 🤝
-
-<a href="https://github.com/dokploy/dokploy/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=dokploy/dokploy" alt="Contributors" />
-</a>
-
-## 📺 Video Tutorial
-
-<a href="https://youtu.be/mznYKPvhcfw">
-  <img src="https://dokploy.com/banner.png" alt="Watch the video" width="400"/>
-</a>
+```bash
+pnpm typecheck            # tsc --noEmit across all packages
+pnpm format-and-lint      # biome check .
+pnpm test                 # vitest (apps/dokploy/__test__)
+```
 
 ## 🤝 Contributing
 
-Check out the [Contributing Guide](CONTRIBUTING.md) for more information.
+See the [Contributing Guide](CONTRIBUTING.md). New code must be Apache-2.0-compatible and must not reintroduce the removed `/proprietary` layer or Dokploy branding.
+
+## 📝 License
+
+[Apache License 2.0](./LICENSE). Portions derived from Dokploy (Apache-2.0); see [`NOTICE`](./NOTICE).

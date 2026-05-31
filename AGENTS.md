@@ -66,22 +66,22 @@ All commands run from the repo root unless noted. Scripts live in the root
 pnpm install                 # install (uses pnpm@10.22.0)
 
 # Dev
-pnpm dokploy:dev             # main app (Next + tRPC + WS), via tsx server/server.ts
+pnpm crane:dev             # main app (Next + tRPC + WS), via tsx server/server.ts
 pnpm server:dev              # build/watch @crane/server
 pnpm server:script           # switch @crane/server to source (switch:dev)
 # apps/api:        pnpm --filter=@crane/api dev        (PORT=4000)
 # apps/schedules:  pnpm --filter=@crane/schedules dev  (PORT=4001)
 
 # Setup / DB (run inside apps/dokploy or via filter)
-pnpm dokploy:setup           # setup.ts + run migrations
-pnpm --filter=dokploy run migration:generate   # drizzle-kit generate
-pnpm --filter=dokploy run migration:run        # apply migrations
-pnpm --filter=dokploy run studio               # drizzle-kit studio
+pnpm crane:setup           # setup.ts + run migrations
+pnpm --filter=crane run migration:generate   # drizzle-kit generate
+pnpm --filter=crane run migration:run        # apply migrations
+pnpm --filter=crane run studio               # drizzle-kit studio
 
 # Build
 pnpm build                   # pnpm -r run build (all packages)
 pnpm server:build            # build @crane/server only
-pnpm dokploy:build           # build main app only
+pnpm crane:build           # build main app only
 
 # Quality gates
 pnpm typecheck               # pnpm -r run typecheck (tsc --noEmit everywhere)

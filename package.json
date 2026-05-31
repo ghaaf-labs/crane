@@ -1,5 +1,5 @@
 {
-	"name": "dokploy",
+	"name": "crane-monorepo",
 	"private": true,
 	"license": "Apache-2.0",
 	"workspaces": [
@@ -7,11 +7,11 @@
 		"packages/*"
 	],
 	"scripts": {
-		"dokploy:setup": "pnpm --filter=dokploy run setup",
-		"dokploy:dev": "pnpm --filter=dokploy run dev",
-		"dokploy:build": "pnpm --filter=dokploy run build",
-		"dokploy:start": "pnpm --filter=dokploy run start",
-		"test": "pnpm --filter=dokploy run test",
+		"crane:setup": "pnpm --filter=crane run setup",
+		"crane:dev": "pnpm --filter=crane run dev",
+		"crane:build": "pnpm --filter=crane run build",
+		"crane:start": "pnpm --filter=crane run start",
+		"test": "pnpm --filter=crane run test",
 		"server:script": "pnpm --filter=server run switch:dev",
 		"server:dev": "pnpm --filter=server run dev",
 		"server:build": "pnpm --filter=server run build",
@@ -21,7 +21,7 @@
 		"format-and-lint": "biome check .",
 		"check": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true",
 		"format-and-lint:fix": "biome check . --write",
-		"generate:openapi": "pnpm --filter=dokploy run generate:openapi"
+		"generate:openapi": "pnpm --filter=crane run generate:openapi"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.1.1",
