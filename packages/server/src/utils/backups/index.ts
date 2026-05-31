@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { scheduleJob } from "node-schedule";
 import { db } from "../../db/index";
 import { startLogCleanup } from "../access-log/handler";
+import { startAuditLogCleanup } from "../audit-log/cleanup";
 import { cleanupAll } from "../docker/utils";
 import { sendDockerCleanupNotifications } from "../notifications/docker-cleanup";
 import { execAsync, execAsyncRemote } from "../process/execAsync";
@@ -14,6 +15,28 @@ import { getS3Credentials, normalizeS3Path, scheduleBackup } from "./utils";
 
 export const initCronJobs = async () => {
 	console.log("Setting up cron jobs....");
+
+	// Opt-in audit-log retention. Set up BEFORE the owner lookup below so an
+	// operator-enabled prune still starts on instances without an owner member.
+	// Disabled unless AUDIT_LOG_RETENTION_DAYS is a strict positive integer
+	// ("90"), so the audit trail is never auto-truncated by default. parseInt is
+	// deliberately avoided — it would accept "90d"/"1.5"/"1e2".
+	const rawRetention = (process.env.AUDIT_LOG_RETENTION_DAYS ?? "").trim();
+	const retentionDays = /^[1-9]\d*$/.test(rawRetention)
+		? Number(rawRetention)
+		: 0;
+	if (Number.isSafeInteger(retentionDays) && retentionDays > 0) {
+		try {
+			const scheduled = startAuditLogCleanup(retentionDays);
+			if (scheduled) {
+				console.log(
+					`[audit-log] retention enabled: pruning entries older than ${retentionDays} day(s)`,
+				);
+			}
+		} catch (error) {
+			console.error("[audit-log] retention setup error", error);
+		}
+	}
 
 	const admin = await db.query.member.findFirst({
 		where: eq(member.role, "owner"),

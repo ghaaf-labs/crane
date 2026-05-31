@@ -1,7 +1,7 @@
 import { db } from "@crane/server/db";
 import type { AuditAction, AuditResourceType } from "@crane/server/db/schema";
 import { auditLog } from "@crane/server/db/schema";
-import { and, desc, eq, gte, ilike, lte } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, lt, lte } from "drizzle-orm";
 
 export type { AuditAction, AuditResourceType };
 
@@ -95,4 +95,37 @@ export const getAuditLogs = async (input: GetAuditLogsInput) => {
 	]);
 
 	return { logs, total };
+};
+
+/**
+ * Deletes audit-log entries created strictly before `before`, returning the
+ * number removed. Used by the optional retention job to bound table growth.
+ * Retention is opt-in (see startAuditLogCleanup) precisely because audit trails
+ * are often kept indefinitely for compliance.
+ *
+ * Deletes in bounded batches so a first prune of a very large table never
+ * materializes every removed id in memory at once.
+ */
+export const deleteAuditLogsOlderThan = async (
+	before: Date,
+	batchSize = 5000,
+): Promise<number> => {
+	let totalDeleted = 0;
+	while (true) {
+		const batch = await db
+			.select({ id: auditLog.id })
+			.from(auditLog)
+			.where(lt(auditLog.createdAt, before))
+			.limit(batchSize);
+		if (batch.length === 0) break;
+		await db.delete(auditLog).where(
+			inArray(
+				auditLog.id,
+				batch.map((row) => row.id),
+			),
+		);
+		totalDeleted += batch.length;
+		if (batch.length < batchSize) break;
+	}
+	return totalDeleted;
 };

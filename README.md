@@ -59,6 +59,7 @@ Images publish to GitHub Container Registry under the fork's namespace:
 - [`docs/REVIEW.md`](./docs/REVIEW.md) — full engineering review (architecture, security, deps, quality, devops, schema, Rust).
 - [`docs/RUST-MIGRATION-ROADMAP.md`](./docs/RUST-MIGRATION-ROADMAP.md) — the phased TypeScript→Rust plan.
 - [`docs/security/`](./docs/security) — [password hashing](./docs/security/password-hashing.md) (argon2id) and [docker-socket hardening](./docs/security/docker-socket-hardening.md).
+- [`docs/operations/audit-logs.md`](./docs/operations/audit-logs.md) — the audit-log viewer (owner/admin) and opt-in retention (`AUDIT_LOG_RETENTION_DAYS`).
 - [`docs/relicense/`](./docs/relicense) — the relicensing/de-brand runbooks and the [remaining-fixes plan](./docs/relicense/REMAINING-FIXES-PLAN.md).
 
 ## ✅ Fork status
