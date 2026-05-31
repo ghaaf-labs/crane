@@ -258,13 +258,3 @@ func processContainerMetrics(container Container) *database.ContainerMetric {
 		Name:      container.Name,
 	}
 }
-
-func parseValue(value string) (float64, string) {
-	parts := strings.Fields(value)
-	if len(parts) < 1 {
-		return 0, "B"
-	}
-	v, _ := strconv.ParseFloat(parts[0], 64)
-	unit := strings.TrimLeft(value, "0123456789.")
-	return v, unit
-}
