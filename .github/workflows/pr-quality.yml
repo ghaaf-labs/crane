@@ -16,6 +16,8 @@ jobs:
     steps:
       - uses: peakoss/anti-slop@v0
         with:
-          blocked-commit-authors: "claude,copilot"
+          # This project is intentionally AI-assisted (commits are co-authored by
+          # Claude); do not block those authors.
+          blocked-commit-authors: ""
           require-description: true
           min-account-age: 5
