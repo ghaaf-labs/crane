@@ -48,6 +48,37 @@ export function networkRatePerSecond(
 	return delta / dtSeconds;
 }
 
+const BYTE_UNIT_FACTORS: Record<string, number> = {
+	b: 1,
+	// docker stats NetIO/BlockIO report SI (1000-based) units
+	kb: 1e3,
+	mb: 1e6,
+	gb: 1e9,
+	tb: 1e12,
+	pb: 1e15,
+	eb: 1e18,
+	// IEC (1024-based) variants, defensively
+	kib: 1024,
+	mib: 1024 ** 2,
+	gib: 1024 ** 3,
+	tib: 1024 ** 4,
+	pib: 1024 ** 5,
+	eib: 1024 ** 6,
+};
+
+/**
+ * Normalises a (value, unit) pair from docker stats (e.g. `1.5`, `"kB"`) to a
+ * byte count. The monitoring service splits docker's NetIO/BlockIO strings into
+ * a number + a unit string that varies per sample, so any series built from the
+ * raw numbers must first be converted to a common unit (bytes). Unknown units
+ * fall back to bytes.
+ */
+export function bytesFromDockerSize(value: number, unit: string): number {
+	if (!Number.isFinite(value)) return 0;
+	const factor = BYTE_UNIT_FACTORS[(unit ?? "").trim().toLowerCase()] ?? 1;
+	return value * factor;
+}
+
 /**
  * Human-readable network throughput from a bytes/second value, scaling the unit
  * (B/s → KB/s → MB/s → GB/s) so the number stays readable at any magnitude.

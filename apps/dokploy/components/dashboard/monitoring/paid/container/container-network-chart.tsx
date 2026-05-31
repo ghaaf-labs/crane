@@ -13,7 +13,12 @@ import {
 	ChartLegendContent,
 	ChartTooltip,
 } from "@/components/ui/chart";
-import { formatTimestamp } from "@/lib/utils";
+import {
+	bytesFromDockerSize,
+	formatNetworkRate,
+	formatTimestamp,
+	networkRatePerSecond,
+} from "@/lib/utils";
 
 interface ContainerMetric {
 	timestamp: string;
@@ -33,8 +38,6 @@ interface FormattedMetric {
 	timestamp: string;
 	input: number;
 	output: number;
-	inputUnit: string;
-	outputUnit: string;
 }
 
 const chartConfig = {
@@ -49,19 +52,45 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export const ContainerNetworkChart = ({ data }: Props) => {
-	const formattedData: FormattedMetric[] = data.map((metric) => ({
-		timestamp: metric.timestamp,
-		input: metric.Network.input,
-		output: metric.Network.output,
-		inputUnit: metric.Network.inputUnit,
-		outputUnit: metric.Network.outputUnit,
-	}));
+	// docker stats NetIO is a cumulative total since container start, reported
+	// with a per-sample unit. Normalise each sample to bytes and derive a
+	// per-second throughput from the delta to the previous sample.
+	const formattedData: FormattedMetric[] = data.map((metric, index) => {
+		const prev = index > 0 ? data[index - 1] : undefined;
+		const currInBytes = bytesFromDockerSize(
+			metric.Network.input,
+			metric.Network.inputUnit,
+		);
+		const currOutBytes = bytesFromDockerSize(
+			metric.Network.output,
+			metric.Network.outputUnit,
+		);
+		const currTimeMs = new Date(metric.timestamp).getTime();
+
+		let input = 0;
+		let output = 0;
+		if (prev) {
+			const prevTimeMs = new Date(prev.timestamp).getTime();
+			input = networkRatePerSecond(
+				bytesFromDockerSize(prev.Network.input, prev.Network.inputUnit),
+				currInBytes,
+				prevTimeMs,
+				currTimeMs,
+			);
+			output = networkRatePerSecond(
+				bytesFromDockerSize(prev.Network.output, prev.Network.outputUnit),
+				currOutBytes,
+				prevTimeMs,
+				currTimeMs,
+			);
+		}
+
+		return { timestamp: metric.timestamp, input, output };
+	});
 
 	const latestData = formattedData[formattedData.length - 1] || {
 		input: 0,
 		output: 0,
-		inputUnit: "B",
-		outputUnit: "B",
 	};
 
 	return (
@@ -69,9 +98,8 @@ export const ContainerNetworkChart = ({ data }: Props) => {
 			<CardHeader className="border-b py-5">
 				<CardTitle>Network I/O</CardTitle>
 				<CardDescription>
-					Input: {latestData.input}
-					{latestData.inputUnit} / Output: {latestData.output}
-					{latestData.outputUnit}
+					Input: {formatNetworkRate(latestData.input)} / Output:{" "}
+					{formatNetworkRate(latestData.output)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
@@ -115,7 +143,7 @@ export const ContainerNetworkChart = ({ data }: Props) => {
 							minTickGap={32}
 							tickFormatter={(value) => formatTimestamp(value)}
 						/>
-						<YAxis />
+						<YAxis tickFormatter={(value) => formatNetworkRate(value)} />
 						<ChartTooltip
 							cursor={false}
 							content={({ active, payload, label }) => {
@@ -137,8 +165,7 @@ export const ContainerNetworkChart = ({ data }: Props) => {
 														Input
 													</span>
 													<span className="font-bold">
-														{data.input}
-														{data.inputUnit}
+														{formatNetworkRate(data.input ?? 0)}
 													</span>
 												</div>
 												<div className="flex flex-col">
@@ -146,8 +173,7 @@ export const ContainerNetworkChart = ({ data }: Props) => {
 														Output
 													</span>
 													<span className="font-bold">
-														{data.output}
-														{data.outputUnit}
+														{formatNetworkRate(data.output ?? 0)}
 													</span>
 												</div>
 											</div>

@@ -13,7 +13,12 @@ import {
 	ChartLegendContent,
 	ChartTooltip,
 } from "@/components/ui/chart";
-import { formatTimestamp } from "@/lib/utils";
+import {
+	bytesFromDockerSize,
+	formatNetworkRate,
+	formatTimestamp,
+	networkRatePerSecond,
+} from "@/lib/utils";
 
 interface ContainerMetric {
 	timestamp: string;
@@ -41,20 +46,46 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export const ContainerBlockChart = ({ data }: Props) => {
-	const formattedData = data.map((metric) => ({
-		timestamp: metric.timestamp,
-		read: metric.BlockIO.read,
-		write: metric.BlockIO.write,
-		readUnit: metric.BlockIO.readUnit,
-		writeUnit: metric.BlockIO.writeUnit,
-	}));
+	// docker stats BlockIO is a cumulative total since container start, reported
+	// with a per-sample unit. Normalise to bytes and derive a per-second disk
+	// throughput from the delta to the previous sample.
+	const formattedData = data.map((metric, index) => {
+		const prev = index > 0 ? data[index - 1] : undefined;
+		const currReadBytes = bytesFromDockerSize(
+			metric.BlockIO.read,
+			metric.BlockIO.readUnit,
+		);
+		const currWriteBytes = bytesFromDockerSize(
+			metric.BlockIO.write,
+			metric.BlockIO.writeUnit,
+		);
+		const currTimeMs = new Date(metric.timestamp).getTime();
+
+		let read = 0;
+		let write = 0;
+		if (prev) {
+			const prevTimeMs = new Date(prev.timestamp).getTime();
+			read = networkRatePerSecond(
+				bytesFromDockerSize(prev.BlockIO.read, prev.BlockIO.readUnit),
+				currReadBytes,
+				prevTimeMs,
+				currTimeMs,
+			);
+			write = networkRatePerSecond(
+				bytesFromDockerSize(prev.BlockIO.write, prev.BlockIO.writeUnit),
+				currWriteBytes,
+				prevTimeMs,
+				currTimeMs,
+			);
+		}
+
+		return { timestamp: metric.timestamp, read, write };
+	});
 
 	const latestData = formattedData[formattedData.length - 1] || {
 		timestamp: "",
 		read: 0,
 		write: 0,
-		readUnit: "B",
-		writeUnit: "B",
 	};
 
 	return (
@@ -62,9 +93,8 @@ export const ContainerBlockChart = ({ data }: Props) => {
 			<CardHeader className="border-b py-5">
 				<CardTitle>Block I/O</CardTitle>
 				<CardDescription>
-					Read: {latestData.read}
-					{latestData.readUnit} / Write: {latestData.write}
-					{latestData.writeUnit}
+					Read: {formatNetworkRate(latestData.read)} / Write:{" "}
+					{formatNetworkRate(latestData.write)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
@@ -108,7 +138,7 @@ export const ContainerBlockChart = ({ data }: Props) => {
 							minTickGap={32}
 							tickFormatter={(value) => formatTimestamp(value)}
 						/>
-						<YAxis />
+						<YAxis tickFormatter={(value) => formatNetworkRate(value)} />
 						<ChartTooltip
 							cursor={false}
 							content={({ active, payload, label }) => {
@@ -130,8 +160,7 @@ export const ContainerBlockChart = ({ data }: Props) => {
 														Read
 													</span>
 													<span className="font-bold">
-														{data.read}
-														{data.readUnit}
+														{formatNetworkRate(data.read ?? 0)}
 													</span>
 												</div>
 												<div className="flex flex-col">
@@ -139,8 +168,7 @@ export const ContainerBlockChart = ({ data }: Props) => {
 														Write
 													</span>
 													<span className="font-bold">
-														{data.write}
-														{data.writeUnit}
+														{formatNetworkRate(data.write ?? 0)}
 													</span>
 												</div>
 											</div>
