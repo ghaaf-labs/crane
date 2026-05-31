@@ -1,4 +1,4 @@
-import { findGitlabById, updateGitlab } from "@dokploy/server";
+import { findGitlabById, updateGitlab } from "@crane/server";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(

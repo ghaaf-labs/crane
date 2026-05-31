@@ -3,8 +3,8 @@ import {
 	getAccessibleGitProviderIds,
 	removeGitProvider,
 	updateGitProvider,
-} from "@dokploy/server";
-import { db } from "@dokploy/server/db";
+} from "@crane/server";
+import { db } from "@crane/server/db";
 import { TRPCError } from "@trpc/server";
 import { desc, eq, inArray } from "drizzle-orm";
 import {

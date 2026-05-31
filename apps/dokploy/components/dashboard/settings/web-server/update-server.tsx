@@ -1,4 +1,4 @@
-import type { IUpdateData } from "@dokploy/server/index";
+import type { IUpdateData } from "@crane/server/index";
 import {
 	Bug,
 	Download,

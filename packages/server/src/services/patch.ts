@@ -1,7 +1,7 @@
 import { join } from "node:path";
-import { paths } from "@dokploy/server/constants";
-import { db } from "@dokploy/server/db";
-import { type apiCreatePatch, patch } from "@dokploy/server/db/schema";
+import { paths } from "@crane/server/constants";
+import { db } from "@crane/server/db";
+import { type apiCreatePatch, patch } from "@crane/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import type { z } from "zod";

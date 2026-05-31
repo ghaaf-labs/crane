@@ -1,6 +1,6 @@
 import { join } from "node:path";
-import { paths } from "@dokploy/server/constants";
-import type { Compose } from "@dokploy/server/services/compose";
+import { paths } from "@crane/server/constants";
+import type { Compose } from "@crane/server/services/compose";
 import { encodeBase64 } from "../docker/utils";
 
 export const getCreateComposeFileCommand = (compose: Compose) => {

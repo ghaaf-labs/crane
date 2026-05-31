@@ -1,24 +1,24 @@
-import { IS_CLOUD, removeScheduleJob, scheduleJob } from "@dokploy/server";
-import { db } from "@dokploy/server/db";
-import { deployments } from "@dokploy/server/db/schema/deployment";
+import { IS_CLOUD, removeScheduleJob, scheduleJob } from "@crane/server";
+import { db } from "@crane/server/db";
+import { deployments } from "@crane/server/db/schema/deployment";
 import {
 	createScheduleSchema,
 	schedules,
 	updateScheduleSchema,
-} from "@dokploy/server/db/schema/schedule";
-import { runCommand } from "@dokploy/server/index";
+} from "@crane/server/db/schema/schedule";
+import { runCommand } from "@crane/server/index";
 import {
 	checkPermission,
 	checkServicePermissionAndAccess,
 	findMemberByUserId,
-} from "@dokploy/server/services/permission";
+} from "@crane/server/services/permission";
 import {
 	createSchedule,
 	deleteSchedule,
 	findScheduleById,
 	updateSchedule,
-} from "@dokploy/server/services/schedule";
-import { findServerById } from "@dokploy/server/services/server";
+} from "@crane/server/services/schedule";
+import { findServerById } from "@crane/server/services/server";
 import { TRPCError } from "@trpc/server";
 import { asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";

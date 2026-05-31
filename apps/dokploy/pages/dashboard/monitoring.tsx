@@ -1,6 +1,6 @@
-import { IS_CLOUD } from "@dokploy/server/constants";
-import { validateRequest } from "@dokploy/server/lib/auth";
-import { hasPermission } from "@dokploy/server/services/permission";
+import { IS_CLOUD } from "@crane/server/constants";
+import { validateRequest } from "@crane/server/lib/auth";
+import { hasPermission } from "@crane/server/services/permission";
 import { Loader2 } from "lucide-react";
 import type { GetServerSidePropsContext } from "next";
 import type { ReactElement } from "react";

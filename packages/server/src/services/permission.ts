@@ -1,5 +1,5 @@
-import { db } from "@dokploy/server/db";
-import { member } from "@dokploy/server/db/schema";
+import { db } from "@crane/server/db";
+import { member } from "@crane/server/db/schema";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import {

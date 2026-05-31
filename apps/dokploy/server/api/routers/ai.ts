@@ -1,33 +1,33 @@
-import { IS_CLOUD } from "@dokploy/server/constants";
+import { IS_CLOUD } from "@crane/server/constants";
 import {
 	apiCreateAi,
 	apiUpdateAi,
 	deploySuggestionSchema,
-} from "@dokploy/server/db/schema/ai";
+} from "@crane/server/db/schema/ai";
 import {
 	createDomain,
 	createMount,
 	findEnvironmentById,
-} from "@dokploy/server/index";
+} from "@crane/server/index";
 import {
 	deleteAiSettings,
 	getAiSettingById,
 	getAiSettingsByOrganizationId,
 	saveAiSettings,
 	suggestVariants,
-} from "@dokploy/server/services/ai";
-import { createComposeByTemplate } from "@dokploy/server/services/compose";
+} from "@crane/server/services/ai";
+import { createComposeByTemplate } from "@crane/server/services/compose";
 import {
 	addNewService,
 	checkServiceAccess,
-} from "@dokploy/server/services/permission";
-import { findProjectById } from "@dokploy/server/services/project";
+} from "@crane/server/services/permission";
+import { findProjectById } from "@crane/server/services/project";
 import {
 	getProviderHeaders,
 	getProviderName,
 	type Model,
 	selectAIProvider,
-} from "@dokploy/server/utils/ai/select-ai-provider";
+} from "@crane/server/utils/ai/select-ai-provider";
 import { TRPCError } from "@trpc/server";
 import { generateText } from "ai";
 import { z } from "zod";

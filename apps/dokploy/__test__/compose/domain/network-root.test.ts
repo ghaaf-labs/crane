@@ -1,4 +1,4 @@
-import { addDokployNetworkToRoot } from "@dokploy/server";
+import { addDokployNetworkToRoot } from "@crane/server";
 import { describe, expect, it } from "vitest";
 
 describe("addDokployNetworkToRoot", () => {

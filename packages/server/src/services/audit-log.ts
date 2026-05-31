@@ -1,6 +1,6 @@
-import { db } from "@dokploy/server/db";
-import type { AuditAction, AuditResourceType } from "@dokploy/server/db/schema";
-import { auditLog } from "@dokploy/server/db/schema";
+import { db } from "@crane/server/db";
+import type { AuditAction, AuditResourceType } from "@crane/server/db/schema";
+import { auditLog } from "@crane/server/db/schema";
 import { and, desc, eq, gte, ilike, lte } from "drizzle-orm";
 
 export type { AuditAction, AuditResourceType };

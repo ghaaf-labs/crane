@@ -13,8 +13,8 @@ import {
 	removeDomainById,
 	updateDomainById,
 	validateDomain,
-} from "@dokploy/server";
-import { checkServicePermissionAndAccess } from "@dokploy/server/services/permission";
+} from "@crane/server";
+import { checkServicePermissionAndAccess } from "@crane/server/services/permission";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {

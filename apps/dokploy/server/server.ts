@@ -11,7 +11,7 @@ import {
 	initVolumeBackupsCronJobs,
 	sendDokployRestartNotifications,
 	setupDirectories,
-} from "@dokploy/server";
+} from "@crane/server";
 import { config } from "dotenv";
 import next from "next";
 import packageInfo from "../package.json";

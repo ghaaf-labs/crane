@@ -1,4 +1,4 @@
-import type { findEnvironmentsByProjectId } from "@dokploy/server";
+import type { findEnvironmentsByProjectId } from "@crane/server";
 import { ChevronDownIcon, PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { useRouter } from "next/router";
 import { useState } from "react";

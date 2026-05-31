@@ -13,8 +13,8 @@ import {
 	sendEmailNotification,
 	sendResendNotification,
 	updateUser,
-} from "@dokploy/server";
-import { db } from "@dokploy/server/db";
+} from "@crane/server";
+import { db } from "@crane/server/db";
 import {
 	account,
 	apiAssignPermissions,
@@ -25,11 +25,11 @@ import {
 	member,
 	session,
 	user,
-} from "@dokploy/server/db/schema";
+} from "@crane/server/db/schema";
 import {
 	hasPermission,
 	resolvePermissions,
-} from "@dokploy/server/services/permission";
+} from "@crane/server/services/permission";
 import { TRPCError } from "@trpc/server";
 import * as bcrypt from "bcrypt";
 import { and, asc, eq, gt, ne } from "drizzle-orm";

@@ -1,4 +1,4 @@
-import { db } from "@dokploy/server/db";
+import { db } from "@crane/server/db";
 import {
 	libsql,
 	mariadb,
@@ -6,13 +6,13 @@ import {
 	mysql,
 	postgres,
 	redis,
-} from "@dokploy/server/db/schema";
-import { deployLibsql } from "@dokploy/server/services/libsql";
-import { deployMariadb } from "@dokploy/server/services/mariadb";
-import { deployMongo } from "@dokploy/server/services/mongo";
-import { deployMySql } from "@dokploy/server/services/mysql";
-import { deployPostgres } from "@dokploy/server/services/postgres";
-import { deployRedis } from "@dokploy/server/services/redis";
+} from "@crane/server/db/schema";
+import { deployLibsql } from "@crane/server/services/libsql";
+import { deployMariadb } from "@crane/server/services/mariadb";
+import { deployMongo } from "@crane/server/services/mongo";
+import { deployMySql } from "@crane/server/services/mysql";
+import { deployPostgres } from "@crane/server/services/postgres";
+import { deployRedis } from "@crane/server/services/redis";
 import { eq } from "drizzle-orm";
 import { removeService } from "../docker/utils";
 import { execAsync, execAsyncRemote } from "../process/execAsync";

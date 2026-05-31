@@ -2,13 +2,13 @@ import { createWriteStream } from "node:fs";
 import { mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { IS_CLOUD, paths } from "@dokploy/server/constants";
-import type { BackupSchedule } from "@dokploy/server/services/backup";
+import { IS_CLOUD, paths } from "@crane/server/constants";
+import type { BackupSchedule } from "@crane/server/services/backup";
 import {
 	createDeploymentBackup,
 	updateDeploymentStatus,
-} from "@dokploy/server/services/deployment";
-import { findDestinationById } from "@dokploy/server/services/destination";
+} from "@crane/server/services/deployment";
+import { findDestinationById } from "@crane/server/services/destination";
 import { sendDokployBackupNotifications } from "../notifications/dokploy-backup";
 import { execAsync } from "../process/execAsync";
 import { getBackupTimestamp, getS3Credentials, normalizeS3Path } from "./utils";

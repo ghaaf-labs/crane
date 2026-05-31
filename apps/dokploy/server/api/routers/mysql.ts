@@ -22,14 +22,14 @@ import {
 	stopService,
 	stopServiceRemote,
 	updateMySqlById,
-} from "@dokploy/server";
-import { db } from "@dokploy/server/db";
+} from "@crane/server";
+import { db } from "@crane/server/db";
 import {
 	addNewService,
 	checkServiceAccess,
 	checkServicePermissionAndAccess,
 	findMemberByUserId,
-} from "@dokploy/server/services/permission";
+} from "@crane/server/services/permission";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod";

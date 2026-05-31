@@ -1,15 +1,15 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
-import type { ApplicationNested } from "@dokploy/server";
-import { paths } from "@dokploy/server/constants";
-import { execAsync } from "@dokploy/server/utils/process/execAsync";
+import type { ApplicationNested } from "@crane/server";
+import { paths } from "@crane/server/constants";
+import { execAsync } from "@crane/server/utils/process/execAsync";
 import { format } from "date-fns";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const REAL_TEST_TIMEOUT = 180000; // 3 minutes
 
 // Mock ONLY database and notifications
-vi.mock("@dokploy/server/db", () => {
+vi.mock("@crane/server/db", () => {
 	const createChainableMock = (): any => {
 		const chain: any = {
 			set: vi.fn(() => chain),
@@ -45,10 +45,10 @@ vi.mock("@dokploy/server/db", () => {
 	};
 });
 
-vi.mock("@dokploy/server/services/application", async () => {
+vi.mock("@crane/server/services/application", async () => {
 	const actual = await vi.importActual<
-		typeof import("@dokploy/server/services/application")
-	>("@dokploy/server/services/application");
+		typeof import("@crane/server/services/application")
+	>("@crane/server/services/application");
 	return {
 		...actual,
 		findApplicationById: vi.fn(),
@@ -56,25 +56,25 @@ vi.mock("@dokploy/server/services/application", async () => {
 	};
 });
 
-vi.mock("@dokploy/server/services/admin", () => ({
+vi.mock("@crane/server/services/admin", () => ({
 	getDokployUrl: vi.fn().mockResolvedValue("http://localhost:3000"),
 }));
 
-vi.mock("@dokploy/server/services/deployment", () => ({
+vi.mock("@crane/server/services/deployment", () => ({
 	createDeployment: vi.fn(),
 	updateDeploymentStatus: vi.fn(),
 	updateDeployment: vi.fn(),
 }));
 
-vi.mock("@dokploy/server/utils/notifications/build-success", () => ({
+vi.mock("@crane/server/utils/notifications/build-success", () => ({
 	sendBuildSuccessNotifications: vi.fn(),
 }));
 
-vi.mock("@dokploy/server/utils/notifications/build-error", () => ({
+vi.mock("@crane/server/utils/notifications/build-error", () => ({
 	sendBuildErrorNotifications: vi.fn(),
 }));
 
-vi.mock("@dokploy/server/services/rollbacks", () => ({
+vi.mock("@crane/server/services/rollbacks", () => ({
 	createRollback: vi.fn(),
 }));
 
@@ -84,11 +84,11 @@ vi.mock("@dokploy/server/services/rollbacks", () => ({
 // - getBuildCommand
 // - mechanizeDockerContainer (requires Docker Swarm)
 
-import { db } from "@dokploy/server/db";
-import * as adminService from "@dokploy/server/services/admin";
-import * as applicationService from "@dokploy/server/services/application";
-import { deployApplication } from "@dokploy/server/services/application";
-import * as deploymentService from "@dokploy/server/services/deployment";
+import { db } from "@crane/server/db";
+import * as adminService from "@crane/server/services/admin";
+import * as applicationService from "@crane/server/services/application";
+import { deployApplication } from "@crane/server/services/application";
+import * as deploymentService from "@crane/server/services/deployment";
 
 const createMockApplication = (
 	overrides: Partial<ApplicationNested> = {},

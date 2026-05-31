@@ -1,7 +1,7 @@
-import { db } from "@dokploy/server/db";
-import { notifications } from "@dokploy/server/db/schema";
-import BuildSuccessEmail from "@dokploy/server/emails/emails/build-success";
-import type { Domain } from "@dokploy/server/services/domain";
+import { db } from "@crane/server/db";
+import { notifications } from "@crane/server/db/schema";
+import BuildSuccessEmail from "@crane/server/emails/emails/build-success";
+import type { Domain } from "@crane/server/services/domain";
 import { renderAsync } from "@react-email/components";
 import { format } from "date-fns";
 import { and, eq } from "drizzle-orm";

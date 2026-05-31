@@ -15,8 +15,8 @@ import {
 	serverValidate,
 	setupMonitoring,
 	updateServerById,
-} from "@dokploy/server";
-import { db } from "@dokploy/server/db";
+} from "@crane/server";
+import { db } from "@crane/server/db";
 import { TRPCError } from "@trpc/server";
 import { observable } from "@trpc/server/observable";
 import { and, desc, eq, getTableColumns, isNotNull, sql } from "drizzle-orm";

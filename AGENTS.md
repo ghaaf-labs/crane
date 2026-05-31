@@ -37,10 +37,10 @@ Workspace globs (`pnpm-workspace.yaml`): `apps/api`, `apps/dokploy`,
 | Path | Stack | Role |
 |------|-------|------|
 | `apps/dokploy` | Next.js (pages router) + tRPC + WebSockets + in-process BullMQ worker | The main app: UI, the 48-router tRPC tree, auth/session, 6 WebSocket streaming servers, and the local single-node deploy worker. Build entry for both Next and an esbuild server bundle (`server/server.ts`). |
-| `apps/api` | Hono + Inngest | Remote-server deploy executor. Receives `/deploy` POSTs and runs the **same** `@dokploy/server` functions through Inngest. Port 4000 in dev. |
+| `apps/api` | Hono + Inngest | Remote-server deploy executor. Receives `/deploy` POSTs and runs the **same** `@crane/server` functions through Inngest. Port 4000 in dev. |
 | `apps/schedules` | Hono + BullMQ | Cron/scheduled-job executor (3 workers). Port 4001 in dev. |
-| `apps/monitoring` | **Go** (Fiber) + local SQLite | Standalone metrics service (`/health`, `/metrics`, `/metrics/containers`). Does **not** import `@dokploy/server`; talks HTTP only. The one already-decoupled, cross-language boundary — use it as the model for Rust extraction. Module path still `github.com/mauriciogm/dokploy/...` (rename pending). |
-| `packages/server` (`@dokploy/server`) | TypeScript | The shared "god-module": Drizzle schema + all ~46 services + all docker/swarm/traefik/ssh integration. Re-exported through one ~138-line barrel (`src/index.ts`) and consumed by all three TS apps. |
+| `apps/monitoring` | **Go** (Fiber) + local SQLite | Standalone metrics service (`/health`, `/metrics`, `/metrics/containers`). Does **not** import `@crane/server`; talks HTTP only. The one already-decoupled, cross-language boundary — use it as the model for Rust extraction. Module path still `github.com/mauriciogm/dokploy/...` (rename pending). |
+| `packages/server` (`@crane/server`) | TypeScript | The shared "god-module": Drizzle schema + all ~46 services + all docker/swarm/traefik/ssh integration. Re-exported through one ~138-line barrel (`src/index.ts`) and consumed by all three TS apps. |
 
 Key facts:
 - **Real work always lives in `packages/server`.** The apps are dispatchers.
@@ -67,10 +67,10 @@ pnpm install                 # install (uses pnpm@10.22.0)
 
 # Dev
 pnpm dokploy:dev             # main app (Next + tRPC + WS), via tsx server/server.ts
-pnpm server:dev              # build/watch @dokploy/server
-pnpm server:script           # switch @dokploy/server to source (switch:dev)
-# apps/api:        pnpm --filter=@dokploy/api dev        (PORT=4000)
-# apps/schedules:  pnpm --filter=@dokploy/schedules dev  (PORT=4001)
+pnpm server:dev              # build/watch @crane/server
+pnpm server:script           # switch @crane/server to source (switch:dev)
+# apps/api:        pnpm --filter=@crane/api dev        (PORT=4000)
+# apps/schedules:  pnpm --filter=@crane/schedules dev  (PORT=4001)
 
 # Setup / DB (run inside apps/dokploy or via filter)
 pnpm dokploy:setup           # setup.ts + run migrations
@@ -80,7 +80,7 @@ pnpm --filter=dokploy run studio               # drizzle-kit studio
 
 # Build
 pnpm build                   # pnpm -r run build (all packages)
-pnpm server:build            # build @dokploy/server only
+pnpm server:build            # build @crane/server only
 pnpm dokploy:build           # build main app only
 
 # Quality gates

@@ -28,7 +28,7 @@ const mockMemberData = (
 let memberToReturn: ReturnType<typeof mockMemberData> =
 	mockMemberData("member");
 
-vi.mock("@dokploy/server/db", () => ({
+vi.mock("@crane/server/db", () => ({
 	db: {
 		query: {
 			member: {
@@ -43,7 +43,7 @@ vi.mock("@dokploy/server/db", () => ({
 	},
 }));
 
-const { checkPermission } = await import("@dokploy/server/services/permission");
+const { checkPermission } = await import("@crane/server/services/permission");
 
 const ctx = {
 	user: { id: "user-1" },

@@ -1,14 +1,14 @@
-import { db } from "@dokploy/server/db";
+import { db } from "@crane/server/db";
 import {
 	type apiCreateMariaDB,
 	backups,
 	buildAppName,
 	mariadb,
-} from "@dokploy/server/db/schema";
-import { generatePassword } from "@dokploy/server/templates";
-import { buildMariadb } from "@dokploy/server/utils/databases/mariadb";
-import { pullImage } from "@dokploy/server/utils/docker/utils";
-import { execAsyncRemote } from "@dokploy/server/utils/process/execAsync";
+} from "@crane/server/db/schema";
+import { generatePassword } from "@crane/server/templates";
+import { buildMariadb } from "@crane/server/utils/databases/mariadb";
+import { pullImage } from "@crane/server/utils/docker/utils";
+import { execAsyncRemote } from "@crane/server/utils/process/execAsync";
 import { TRPCError } from "@trpc/server";
 import { eq, getTableColumns } from "drizzle-orm";
 import type { z } from "zod";

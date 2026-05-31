@@ -1,14 +1,14 @@
 import path from "node:path";
-import { IS_CLOUD, paths } from "@dokploy/server/constants";
-import { getDokployUrl } from "@dokploy/server/services/admin";
+import { IS_CLOUD, paths } from "@crane/server/constants";
+import { getDokployUrl } from "@crane/server/services/admin";
 import {
 	createServerDeployment,
 	updateDeploymentStatus,
-} from "@dokploy/server/services/deployment";
+} from "@crane/server/services/deployment";
 import {
 	findServerById,
 	updateServerById,
-} from "@dokploy/server/services/server";
+} from "@crane/server/services/server";
 import {
 	getDefaultMiddlewares,
 	getDefaultServerTraefikConfig,
@@ -16,7 +16,7 @@ import {
 	TRAEFIK_PORT,
 	TRAEFIK_SSL_PORT,
 	TRAEFIK_VERSION,
-} from "@dokploy/server/setup/traefik-setup";
+} from "@crane/server/setup/traefik-setup";
 import slug from "slugify";
 import { Client } from "ssh2";
 import { recreateDirectory } from "../utils/filesystem/directory";

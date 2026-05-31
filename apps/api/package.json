@@ -1,5 +1,5 @@
 {
-	"name": "@dokploy/api",
+	"name": "@crane/api",
 	"version": "0.0.1",
 	"license": "Apache-2.0",
 	"type": "module",
@@ -11,7 +11,7 @@
 	},
 	"dependencies": {
 		"inngest": "3.40.1",
-		"@dokploy/server": "workspace:*",
+		"@crane/server": "workspace:*",
 		"@hono/node-server": "^1.14.3",
 		"@hono/zod-validator": "0.7.6",
 		"dotenv": "^16.4.5",

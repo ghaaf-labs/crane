@@ -47,9 +47,9 @@ import {
 	writeMainConfig,
 	writeTraefikConfigInPath,
 	writeTraefikSetup,
-} from "@dokploy/server";
-import { db } from "@dokploy/server/db";
-import { checkPermission } from "@dokploy/server/services/permission";
+} from "@crane/server";
+import { db } from "@crane/server/db";
+import { checkPermission } from "@crane/server/services/permission";
 import { generateOpenApiDocument } from "@dokploy/trpc-openapi";
 import { TRPCError } from "@trpc/server";
 import { eq, sql } from "drizzle-orm";

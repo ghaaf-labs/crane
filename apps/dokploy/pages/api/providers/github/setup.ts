@@ -1,5 +1,5 @@
-import { createGithub } from "@dokploy/server";
-import { db } from "@dokploy/server/db";
+import { createGithub } from "@crane/server";
+import { db } from "@crane/server/db";
 import { eq } from "drizzle-orm";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { Octokit } from "octokit";

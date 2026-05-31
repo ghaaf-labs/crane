@@ -1,6 +1,6 @@
-import InvoiceNotificationEmail from "@dokploy/server/emails/emails/invoice-notification";
-import PaymentFailedEmail from "@dokploy/server/emails/emails/payment-failed";
-import { sendEmail } from "@dokploy/server/verification/send-verification-email";
+import InvoiceNotificationEmail from "@crane/server/emails/emails/invoice-notification";
+import PaymentFailedEmail from "@crane/server/emails/emails/payment-failed";
+import { sendEmail } from "@crane/server/verification/send-verification-email";
 import { renderAsync } from "@react-email/components";
 import { format } from "date-fns";
 import type Stripe from "stripe";

@@ -1,14 +1,14 @@
-import * as adminService from "@dokploy/server/services/admin";
-import * as applicationService from "@dokploy/server/services/application";
-import { deployApplication } from "@dokploy/server/services/application";
-import * as deploymentService from "@dokploy/server/services/deployment";
-import * as builders from "@dokploy/server/utils/builders";
-import * as notifications from "@dokploy/server/utils/notifications/build-success";
-import * as execProcess from "@dokploy/server/utils/process/execAsync";
-import * as gitProvider from "@dokploy/server/utils/providers/git";
+import * as adminService from "@crane/server/services/admin";
+import * as applicationService from "@crane/server/services/application";
+import { deployApplication } from "@crane/server/services/application";
+import * as deploymentService from "@crane/server/services/deployment";
+import * as builders from "@crane/server/utils/builders";
+import * as notifications from "@crane/server/utils/notifications/build-success";
+import * as execProcess from "@crane/server/utils/process/execAsync";
+import * as gitProvider from "@crane/server/utils/providers/git";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@dokploy/server/db", () => {
+vi.mock("@crane/server/db", () => {
 	const createChainableMock = (): any => {
 		const chain = {
 			set: vi.fn(() => chain),
@@ -44,10 +44,10 @@ vi.mock("@dokploy/server/db", () => {
 	};
 });
 
-vi.mock("@dokploy/server/services/application", async () => {
+vi.mock("@crane/server/services/application", async () => {
 	const actual = await vi.importActual<
-		typeof import("@dokploy/server/services/application")
-	>("@dokploy/server/services/application");
+		typeof import("@crane/server/services/application")
+	>("@crane/server/services/application");
 	return {
 		...actual,
 		findApplicationById: vi.fn(),
@@ -55,35 +55,35 @@ vi.mock("@dokploy/server/services/application", async () => {
 	};
 });
 
-vi.mock("@dokploy/server/services/admin", () => ({
+vi.mock("@crane/server/services/admin", () => ({
 	getDokployUrl: vi.fn(),
 }));
 
-vi.mock("@dokploy/server/services/deployment", () => ({
+vi.mock("@crane/server/services/deployment", () => ({
 	createDeployment: vi.fn(),
 	updateDeploymentStatus: vi.fn(),
 	updateDeployment: vi.fn(),
 }));
 
-vi.mock("@dokploy/server/utils/providers/git", async () => {
+vi.mock("@crane/server/utils/providers/git", async () => {
 	const actual = await vi.importActual<
-		typeof import("@dokploy/server/utils/providers/git")
-	>("@dokploy/server/utils/providers/git");
+		typeof import("@crane/server/utils/providers/git")
+	>("@crane/server/utils/providers/git");
 	return {
 		...actual,
 		getGitCommitInfo: vi.fn(),
 	};
 });
 
-vi.mock("@dokploy/server/utils/process/execAsync", () => ({
+vi.mock("@crane/server/utils/process/execAsync", () => ({
 	execAsync: vi.fn(),
 	ExecError: class ExecError extends Error {},
 }));
 
-vi.mock("@dokploy/server/utils/builders", async () => {
+vi.mock("@crane/server/utils/builders", async () => {
 	const actual = await vi.importActual<
-		typeof import("@dokploy/server/utils/builders")
-	>("@dokploy/server/utils/builders");
+		typeof import("@crane/server/utils/builders")
+	>("@crane/server/utils/builders");
 	return {
 		...actual,
 		mechanizeDockerContainer: vi.fn(),
@@ -91,20 +91,20 @@ vi.mock("@dokploy/server/utils/builders", async () => {
 	};
 });
 
-vi.mock("@dokploy/server/utils/notifications/build-success", () => ({
+vi.mock("@crane/server/utils/notifications/build-success", () => ({
 	sendBuildSuccessNotifications: vi.fn(),
 }));
 
-vi.mock("@dokploy/server/utils/notifications/build-error", () => ({
+vi.mock("@crane/server/utils/notifications/build-error", () => ({
 	sendBuildErrorNotifications: vi.fn(),
 }));
 
-vi.mock("@dokploy/server/services/rollbacks", () => ({
+vi.mock("@crane/server/services/rollbacks", () => ({
 	createRollback: vi.fn(),
 }));
 
-import { db } from "@dokploy/server/db";
-import { cloneGitRepository } from "@dokploy/server/utils/providers/git";
+import { db } from "@crane/server/db";
+import { cloneGitRepository } from "@crane/server/utils/providers/git";
 
 const createMockApplication = (overrides = {}) => ({
 	applicationId: "test-app-id",

@@ -1,6 +1,6 @@
-import type { Schema } from "@dokploy/server/templates";
-import type { CompleteTemplate } from "@dokploy/server/templates/processors";
-import { processTemplate } from "@dokploy/server/templates/processors";
+import type { Schema } from "@crane/server/templates";
+import type { CompleteTemplate } from "@crane/server/templates/processors";
+import { processTemplate } from "@crane/server/templates/processors";
 import { describe, expect, it } from "vitest";
 
 describe("processTemplate", () => {

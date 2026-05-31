@@ -1,21 +1,21 @@
 import path from "node:path";
-import { paths } from "@dokploy/server/constants";
-import { db } from "@dokploy/server/db";
+import { paths } from "@crane/server/constants";
+import { db } from "@crane/server/db";
 import {
 	type apiCreateMount,
 	mounts,
 	type ServiceType,
-} from "@dokploy/server/db/schema";
+} from "@crane/server/db/schema";
 import {
 	createFile,
 	encodeBase64,
 	getCreateFileCommand,
-} from "@dokploy/server/utils/docker/utils";
-import { removeFileOrDirectory } from "@dokploy/server/utils/filesystem/directory";
+} from "@crane/server/utils/docker/utils";
+import { removeFileOrDirectory } from "@crane/server/utils/filesystem/directory";
 import {
 	execAsync,
 	execAsyncRemote,
-} from "@dokploy/server/utils/process/execAsync";
+} from "@crane/server/utils/process/execAsync";
 import { TRPCError } from "@trpc/server";
 import { eq, type SQL, sql } from "drizzle-orm";
 import type { z } from "zod";

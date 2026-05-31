@@ -8,8 +8,8 @@ import {
 	IS_CLOUD,
 	removePreviewDeployment,
 	shouldDeploy,
-} from "@dokploy/server";
-import { db } from "@dokploy/server/db";
+} from "@crane/server";
+import { db } from "@crane/server/db";
 import { Webhooks } from "@octokit/webhooks";
 import { and, eq } from "drizzle-orm";
 import type { NextApiRequest, NextApiResponse } from "next";

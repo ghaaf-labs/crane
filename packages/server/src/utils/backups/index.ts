@@ -1,8 +1,8 @@
-import { CLEANUP_CRON_JOB } from "@dokploy/server/constants";
-import { member } from "@dokploy/server/db/schema";
-import type { BackupSchedule } from "@dokploy/server/services/backup";
-import { getAllServers } from "@dokploy/server/services/server";
-import { getWebServerSettings } from "@dokploy/server/services/web-server-settings";
+import { CLEANUP_CRON_JOB } from "@crane/server/constants";
+import { member } from "@crane/server/db/schema";
+import type { BackupSchedule } from "@crane/server/services/backup";
+import { getAllServers } from "@crane/server/services/server";
+import { getWebServerSettings } from "@crane/server/services/web-server-settings";
 import { eq } from "drizzle-orm";
 import { scheduleJob } from "node-schedule";
 import { db } from "../../db/index";

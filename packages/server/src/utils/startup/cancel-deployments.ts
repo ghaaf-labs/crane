@@ -1,4 +1,4 @@
-import { deployments } from "@dokploy/server/db/schema";
+import { deployments } from "@crane/server/db/schema";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/index";
 

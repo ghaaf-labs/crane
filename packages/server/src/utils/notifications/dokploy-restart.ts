@@ -1,6 +1,6 @@
-import { db } from "@dokploy/server/db";
-import { notifications } from "@dokploy/server/db/schema";
-import DokployRestartEmail from "@dokploy/server/emails/emails/dokploy-restart";
+import { db } from "@crane/server/db";
+import { notifications } from "@crane/server/db/schema";
+import DokployRestartEmail from "@crane/server/emails/emails/dokploy-restart";
 import { renderAsync } from "@react-email/components";
 import { format } from "date-fns";
 import { eq } from "drizzle-orm";

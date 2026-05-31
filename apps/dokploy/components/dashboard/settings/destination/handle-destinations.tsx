@@ -1,7 +1,7 @@
 import {
 	ADDITIONAL_FLAG_ERROR,
 	ADDITIONAL_FLAG_REGEX,
-} from "@dokploy/server/db/validations/destination";
+} from "@crane/server/db/validations/destination";
 import { standardSchemaResolver as zodResolver } from "@hookform/resolvers/standard-schema";
 import { PenBoxIcon, PlusIcon, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";

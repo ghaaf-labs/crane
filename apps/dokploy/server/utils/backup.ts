@@ -2,7 +2,7 @@ import {
 	type BackupScheduleList,
 	IS_CLOUD,
 	removeScheduleBackup,
-} from "@dokploy/server/index";
+} from "@crane/server/index";
 
 type QueueJob =
 	| {

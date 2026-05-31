@@ -7,7 +7,7 @@ import {
 	IS_CLOUD,
 	recordAdvancedStats,
 	validateRequest,
-} from "@dokploy/server";
+} from "@crane/server";
 import { WebSocketServer } from "ws";
 
 export const setupDockerStatsMonitoringSocketServer = (

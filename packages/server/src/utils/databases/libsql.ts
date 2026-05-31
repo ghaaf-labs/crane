@@ -1,4 +1,4 @@
-import type { InferResultType } from "@dokploy/server/types/with";
+import type { InferResultType } from "@crane/server/types/with";
 import type { CreateServiceOptions, PortConfig } from "dockerode";
 import {
 	calculateResources,

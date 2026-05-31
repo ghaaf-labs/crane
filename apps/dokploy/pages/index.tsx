@@ -1,5 +1,5 @@
-import { IS_CLOUD, isAdminPresent } from "@dokploy/server";
-import { validateRequest } from "@dokploy/server/lib/auth";
+import { IS_CLOUD, isAdminPresent } from "@crane/server";
+import { validateRequest } from "@crane/server/lib/auth";
 import { standardSchemaResolver as zodResolver } from "@hookform/resolvers/standard-schema";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import type { GetServerSidePropsContext } from "next";

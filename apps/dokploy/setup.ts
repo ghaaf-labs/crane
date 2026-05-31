@@ -4,20 +4,17 @@ import { promisify } from "node:util";
 
 const execAsync = promisify(exec);
 
-import { setupDirectories } from "@dokploy/server/setup/config-paths";
-import { initializePostgres } from "@dokploy/server/setup/postgres-setup";
-import { initializeRedis } from "@dokploy/server/setup/redis-setup";
-import {
-	initializeNetwork,
-	initializeSwarm,
-} from "@dokploy/server/setup/setup";
+import { setupDirectories } from "@crane/server/setup/config-paths";
+import { initializePostgres } from "@crane/server/setup/postgres-setup";
+import { initializeRedis } from "@crane/server/setup/redis-setup";
+import { initializeNetwork, initializeSwarm } from "@crane/server/setup/setup";
 import {
 	createDefaultMiddlewares,
 	createDefaultServerTraefikConfig,
 	createDefaultTraefikConfig,
 	initializeStandaloneTraefik,
 	TRAEFIK_VERSION,
-} from "@dokploy/server/setup/traefik-setup";
+} from "@crane/server/setup/traefik-setup";
 
 (async () => {
 	try {

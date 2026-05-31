@@ -29,10 +29,7 @@ export default defineConfig({
 	],
 	resolve: {
 		alias: {
-			"@dokploy/server": path.resolve(
-				__dirname,
-				"../../../packages/server/src",
-			),
+			"@crane/server": path.resolve(__dirname, "../../../packages/server/src"),
 		},
 	},
 });

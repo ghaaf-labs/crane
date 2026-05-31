@@ -1,4 +1,4 @@
-import { IS_CLOUD, validateRequest } from "@dokploy/server";
+import { IS_CLOUD, validateRequest } from "@crane/server";
 import { createServerSideHelpers } from "@trpc/react-query/server";
 import type { GetServerSidePropsContext } from "next";
 import type { ReactElement } from "react";

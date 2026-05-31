@@ -1,5 +1,5 @@
-import type { Schema } from "@dokploy/server/templates";
-import { processValue } from "@dokploy/server/templates/processors";
+import type { Schema } from "@crane/server/templates";
+import { processValue } from "@crane/server/templates/processors";
 import { describe, expect, it } from "vitest";
 
 describe("helpers functions", () => {

@@ -1,6 +1,6 @@
-import { findOwner } from "@dokploy/server";
-import { db } from "@dokploy/server/db";
-import { user } from "@dokploy/server/db/schema";
+import { findOwner } from "@crane/server";
+import { db } from "@crane/server/db";
+import { user } from "@crane/server/db/schema";
 import { eq } from "drizzle-orm";
 
 (async () => {

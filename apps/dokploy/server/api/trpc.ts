@@ -8,10 +8,10 @@
  */
 
 // import { getServerAuthSession } from "@/server/auth";
-import { db } from "@dokploy/server/db";
-import type { statements } from "@dokploy/server/lib/access-control";
-import { validateRequest } from "@dokploy/server/lib/auth";
-import { checkPermission } from "@dokploy/server/services/permission";
+import { db } from "@crane/server/db";
+import type { statements } from "@crane/server/lib/access-control";
+import { validateRequest } from "@crane/server/lib/auth";
+import { checkPermission } from "@crane/server/services/permission";
 import type { OpenApiMeta } from "@dokploy/trpc-openapi";
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { CreateNextContextOptions } from "@trpc/server/adapters/next";

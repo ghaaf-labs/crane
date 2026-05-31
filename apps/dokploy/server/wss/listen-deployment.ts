@@ -1,8 +1,8 @@
 import { spawn } from "node:child_process";
 import type http from "node:http";
-import { findServerById, IS_CLOUD, validateRequest } from "@dokploy/server";
-import { encodeBase64 } from "@dokploy/server/utils/docker/utils";
-import { readValidDirectory } from "@dokploy/server/wss/utils";
+import { findServerById, IS_CLOUD, validateRequest } from "@crane/server";
+import { encodeBase64 } from "@crane/server/utils/docker/utils";
+import { readValidDirectory } from "@crane/server/wss/utils";
 import { Client } from "ssh2";
 import { WebSocketServer } from "ws";
 

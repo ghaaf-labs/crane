@@ -1,5 +1,5 @@
-import { IS_CLOUD } from "@dokploy/server/constants";
-import { validateRequest } from "@dokploy/server/lib/auth";
+import { IS_CLOUD } from "@crane/server/constants";
+import { validateRequest } from "@crane/server/lib/auth";
 import type { GetServerSidePropsContext } from "next";
 import type { ReactElement } from "react";
 import { ShowSchedules } from "@/components/dashboard/application/schedules/show-schedules";

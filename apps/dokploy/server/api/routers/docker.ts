@@ -12,7 +12,7 @@ import {
 	getServiceContainersByAppName,
 	getStackContainersByAppName,
 	uploadFileToContainer,
-} from "@dokploy/server";
+} from "@crane/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { audit } from "@/server/api/utils/audit";

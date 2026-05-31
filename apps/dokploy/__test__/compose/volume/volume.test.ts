@@ -1,5 +1,5 @@
-import type { ComposeSpecification } from "@dokploy/server";
-import { addSuffixToAllVolumes } from "@dokploy/server";
+import type { ComposeSpecification } from "@crane/server";
+import { addSuffixToAllVolumes } from "@crane/server";
 import { expect, test } from "vitest";
 import { parse } from "yaml";
 

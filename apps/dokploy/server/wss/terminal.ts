@@ -4,8 +4,8 @@ import {
 	findServerById,
 	IS_CLOUD,
 	validateRequest,
-} from "@dokploy/server";
-import { findMemberByUserId } from "@dokploy/server/services/permission";
+} from "@crane/server";
+import { findMemberByUserId } from "@crane/server/services/permission";
 import { publicIpv4, publicIpv6 } from "public-ip";
 import { Client, type ConnectConfig } from "ssh2";
 import { WebSocketServer } from "ws";

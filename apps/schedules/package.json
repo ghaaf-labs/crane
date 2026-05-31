@@ -1,5 +1,5 @@
 {
-	"name": "@dokploy/schedules",
+	"name": "@crane/schedules",
 	"license": "Apache-2.0",
 	"type": "module",
 	"scripts": {
@@ -9,7 +9,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@dokploy/server": "workspace:*",
+		"@crane/server": "workspace:*",
 		"@hono/node-server": "^1.14.3",
 		"@hono/zod-validator": "0.7.6",
 		"bullmq": "5.67.3",

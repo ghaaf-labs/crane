@@ -40,8 +40,8 @@ import {
 	updateSlackNotification,
 	updateTeamsNotification,
 	updateTelegramNotification,
-} from "@dokploy/server";
-import { db } from "@dokploy/server/db";
+} from "@crane/server";
+import { db } from "@crane/server/db";
 import { TRPCError } from "@trpc/server";
 import { desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";

@@ -34,7 +34,7 @@ importers:
 
   apps/api:
     dependencies:
-      '@dokploy/server':
+      '@crane/server':
         specifier: workspace:*
         version: link:../../packages/server
       '@hono/node-server':
@@ -140,7 +140,7 @@ importers:
       '@codemirror/view':
         specifier: ^6.39.15
         version: 6.39.15
-      '@dokploy/server':
+      '@crane/server':
         specifier: workspace:*
         version: link:../../packages/server
       '@dokploy/trpc-openapi':
@@ -543,7 +543,7 @@ importers:
 
   apps/schedules:
     dependencies:
-      '@dokploy/server':
+      '@crane/server':
         specifier: workspace:*
         version: link:../../packages/server
       '@hono/node-server':

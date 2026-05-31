@@ -1,4 +1,4 @@
-import { prepareEnvironmentVariables } from "@dokploy/server/index";
+import { prepareEnvironmentVariables } from "@crane/server/index";
 import { describe, expect, it } from "vitest";
 
 const projectEnv = `

@@ -1,6 +1,6 @@
 import type http from "node:http";
-import { findServerById, IS_CLOUD, validateRequest } from "@dokploy/server";
-import { findMemberByUserId } from "@dokploy/server/services/permission";
+import { findServerById, IS_CLOUD, validateRequest } from "@crane/server";
+import { findMemberByUserId } from "@crane/server/services/permission";
 import { spawn } from "node-pty";
 import { Client } from "ssh2";
 import { WebSocketServer } from "ws";

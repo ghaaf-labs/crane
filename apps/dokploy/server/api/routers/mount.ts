@@ -13,12 +13,12 @@ import {
 	findRedisById,
 	getServiceContainer,
 	updateMount,
-} from "@dokploy/server";
-import type { ServiceType } from "@dokploy/server/db/schema/mount";
+} from "@crane/server";
+import type { ServiceType } from "@crane/server/db/schema/mount";
 import {
 	checkServiceAccess,
 	checkServicePermissionAndAccess,
-} from "@dokploy/server/services/permission";
+} from "@crane/server/services/permission";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { audit } from "@/server/api/utils/audit";

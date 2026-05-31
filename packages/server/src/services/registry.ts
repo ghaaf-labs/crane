@@ -1,9 +1,9 @@
-import { db } from "@dokploy/server/db";
-import { type apiCreateRegistry, registry } from "@dokploy/server/db/schema";
+import { db } from "@crane/server/db";
+import { type apiCreateRegistry, registry } from "@crane/server/db/schema";
 import {
 	execAsync,
 	execAsyncRemote,
-} from "@dokploy/server/utils/process/execAsync";
+} from "@crane/server/utils/process/execAsync";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import type { z } from "zod";

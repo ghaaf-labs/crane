@@ -1,4 +1,4 @@
-import { validateRequest } from "@dokploy/server/lib/auth";
+import { validateRequest } from "@crane/server/lib/auth";
 import { createServerSideHelpers } from "@trpc/react-query/server";
 import copy from "copy-to-clipboard";
 import { HelpCircle, ServerOff } from "lucide-react";

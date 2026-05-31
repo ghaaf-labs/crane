@@ -1,9 +1,9 @@
-import type { ComposeSpecification } from "@dokploy/server";
+import type { ComposeSpecification } from "@crane/server";
 import {
 	addSuffixToAllVolumes,
 	addSuffixToVolumesRoot,
 	generateRandomHash,
-} from "@dokploy/server";
+} from "@crane/server";
 import { expect, test } from "vitest";
 import { parse } from "yaml";
 

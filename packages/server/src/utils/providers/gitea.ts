@@ -1,11 +1,11 @@
 import { join } from "node:path";
-import { paths } from "@dokploy/server/constants";
+import { paths } from "@crane/server/constants";
 import {
 	findGiteaById,
 	type Gitea,
 	updateGitea,
-} from "@dokploy/server/services/gitea";
-import type { InferResultType } from "@dokploy/server/types/with";
+} from "@crane/server/services/gitea";
+import type { InferResultType } from "@crane/server/types/with";
 import { TRPCError } from "@trpc/server";
 
 export const getErrorCloneRequirements = (entity: {
