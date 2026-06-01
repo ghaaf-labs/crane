@@ -28,9 +28,23 @@ export const clusterRouter = createTRPCRouter({
 					});
 				}
 			}
-			const docker = await getRemoteDocker(input.serverId);
-			const workers: DockerNode[] = await docker.listNodes();
-			return workers;
+			try {
+				const docker = await getRemoteDocker(input.serverId);
+				const workers: DockerNode[] = await docker.listNodes();
+				return workers;
+			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error);
+				// docker.listNodes() throws when the host isn't a swarm manager
+				// ("node is not part of a swarm" / "not a swarm manager", HTTP 503).
+				// Treat only that as an empty list so the cluster page renders; surface
+				// any other Docker failure (daemon down, connection/cred errors) so the
+				// operator gets an actionable signal instead of a silent empty list.
+				if (/swarm/i.test(message)) {
+					console.warn(`cluster.getNodes: ${message}`);
+					return [] as DockerNode[];
+				}
+				throw error;
+			}
 		}),
 
 	removeWorker: withPermission("server", "delete")
