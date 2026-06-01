@@ -87,13 +87,17 @@ export const UpdateServer = ({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onOpenChange}>
-			<DialogTrigger asChild>
-				{children ? (
-					children
-				) : (
-					<TooltipProvider delayDuration={0}>
-						<Tooltip>
-							<TooltipTrigger asChild>
+			{children ? (
+				<DialogTrigger asChild>{children}</DialogTrigger>
+			) : (
+				<TooltipProvider delayDuration={0}>
+					<Tooltip>
+						{/* asChild flows the ref through both triggers down to Button (a
+						    forwardRef component). Wrapping a TooltipProvider in
+						    DialogTrigger asChild — as before — passed a ref to a function
+						    component and warned. */}
+						<TooltipTrigger asChild>
+							<DialogTrigger asChild>
 								<Button
 									variant={updateData ? "outline" : "secondary"}
 									size="sm"
@@ -116,16 +120,16 @@ export const UpdateServer = ({
 										</span>
 									)}
 								</Button>
-							</TooltipTrigger>
-							{updateData && (
-								<TooltipContent side="right" sideOffset={10}>
-									<p>Update Available</p>
-								</TooltipContent>
-							)}
-						</Tooltip>
-					</TooltipProvider>
-				)}
-			</DialogTrigger>
+							</DialogTrigger>
+						</TooltipTrigger>
+						{updateData && (
+							<TooltipContent side="right" sideOffset={10}>
+								<p>Update Available</p>
+							</TooltipContent>
+						)}
+					</Tooltip>
+				</TooltipProvider>
+			)}
 			<DialogContent className="max-w-lg">
 				<div className="flex items-center justify-between mb-8">
 					<DialogTitle className="text-2xl font-semibold">
@@ -147,7 +151,7 @@ export const UpdateServer = ({
 				{!hasCheckedUpdate && (
 					<div className="mb-8">
 						<p className="text text-muted-foreground">
-							Check for new releases and update Dokploy.
+							Check for new releases and update Crane.
 							<br />
 							<br />
 							We recommend checking for updates regularly to ensure you have the
@@ -225,7 +229,7 @@ export const UpdateServer = ({
 								<h3 className="text-lg font-medium">Checking for updates...</h3>
 								<p className="text text-muted-foreground">
 									Please wait while we pull the latest version information from
-									Docker Hub.
+									the container registry.
 								</p>
 							</div>
 						</div>
