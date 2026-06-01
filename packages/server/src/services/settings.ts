@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
 	execAsync,
@@ -219,6 +219,13 @@ echo "$json_output"
 		);
 		const result = JSON.parse(stdout);
 		return result;
+	}
+
+	// The traefik dir may not exist yet (fresh install / traefik not set up).
+	// Return an empty tree instead of letting readdirSync throw ENOENT (which
+	// would surface as a 500 and break the Traefik file-system page).
+	if (!existsSync(dirPath)) {
+		return [];
 	}
 
 	const stack = [dirPath];
