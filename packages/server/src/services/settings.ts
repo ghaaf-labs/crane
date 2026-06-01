@@ -150,7 +150,12 @@ export const getUpdateData = async (
 			updateAvailable,
 		};
 	} catch (error) {
-		console.error("Error fetching update data:", error);
+		// Expected, recoverable degradation (registry unreachable, image not yet
+		// published, offline, private repo). The UI just shows "no update", so log
+		// one concise warning rather than spamming a full stack on every poll.
+		console.warn(
+			`Update check skipped: ${error instanceof Error ? error.message : error}`,
+		);
 		return DEFAULT_UPDATE_DATA;
 	}
 };
