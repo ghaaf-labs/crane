@@ -504,16 +504,21 @@ export const getSwarmNodes = async (serverId?: string) => {
 
 		if (stderr) {
 			console.error(`Error: ${stderr}`);
-			return;
+			return [];
 		}
 
-		const nodesArray = stdout
-			.trim()
-			.split("\n")
-			.map((line) => JSON.parse(line));
+		// No swarm / no nodes: avoid JSON.parse("") throwing on empty output.
+		const trimmed = stdout.trim();
+		if (!trimmed) return [];
+
+		const nodesArray = trimmed.split("\n").map((line) => JSON.parse(line));
 		return nodesArray;
 	} catch (error) {
+		// e.g. "docker node ls" fails when the host isn't a swarm manager. Return
+		// an empty list so the query resolves (React Query forbids undefined) and
+		// the UI shows "no nodes" instead of erroring.
 		console.error("getSwarmNodes error:", error);
+		return [];
 	}
 };
 
