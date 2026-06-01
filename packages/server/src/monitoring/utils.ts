@@ -1,4 +1,5 @@
 import { promises } from "node:fs";
+import os from "node:os";
 import { OSUtils } from "node-os-utils";
 import { paths } from "../constants";
 
@@ -12,6 +13,33 @@ export interface Container {
 	Name: string;
 	NetIO: string;
 }
+
+export interface LoadAverageStat {
+	load1: number;
+	load5: number;
+	load15: number;
+	cores: number;
+}
+
+/**
+ * Shapes the OS load average (1/5/15-minute) plus the logical core count into a
+ * rounded, JSON-friendly stat. Pure so it can be unit-tested without the OS.
+ * Load is meaningful relative to `cores` (load ≈ cores means fully busy).
+ * Inside a container os.loadavg() still reflects the host (Linux /proc/loadavg).
+ */
+export const buildLoadAverageStat = (
+	loadavg: number[],
+	cores: number,
+): LoadAverageStat => {
+	const round = (n: number | undefined): number =>
+		typeof n === "number" && Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+	return {
+		load1: round(loadavg[0]),
+		load5: round(loadavg[1]),
+		load15: round(loadavg[2]),
+		cores: cores > 0 ? cores : 0,
+	};
+};
 export const recordAdvancedStats = async (
 	stats: Container,
 	appName: string,
@@ -55,6 +83,12 @@ export const recordAdvancedStats = async (
 				diskFree: +diskFree,
 			});
 		}
+
+		await updateStatsFile(
+			appName,
+			"loadavg",
+			buildLoadAverageStat(os.loadavg(), os.cpus().length),
+		);
 	}
 };
 
@@ -161,12 +195,13 @@ export const getAdvancedStats = async (appName: string) => {
 		disk: await readStatsFile(appName, "disk"),
 		network: await readStatsFile(appName, "network"),
 		block: await readStatsFile(appName, "block"),
+		loadavg: await readStatsFile(appName, "loadavg"),
 	};
 };
 
 export const readStatsFile = async (
 	appName: string,
-	statType: "cpu" | "memory" | "disk" | "network" | "block",
+	statType: "cpu" | "memory" | "disk" | "network" | "block" | "loadavg",
 ) => {
 	try {
 		const { MONITORING_PATH } = paths();
@@ -180,7 +215,7 @@ export const readStatsFile = async (
 
 export const updateStatsFile = async (
 	appName: string,
-	statType: "cpu" | "memory" | "disk" | "network" | "block",
+	statType: "cpu" | "memory" | "disk" | "network" | "block" | "loadavg",
 	value: number | string | unknown,
 ) => {
 	const { MONITORING_PATH } = paths();
@@ -200,7 +235,7 @@ export const updateStatsFile = async (
 
 export const readLastValueStatsFile = async (
 	appName: string,
-	statType: "cpu" | "memory" | "disk" | "network" | "block",
+	statType: "cpu" | "memory" | "disk" | "network" | "block" | "loadavg",
 ) => {
 	try {
 		const { MONITORING_PATH } = paths();
@@ -220,5 +255,6 @@ export const getLastAdvancedStatsFile = async (appName: string) => {
 		disk: await readLastValueStatsFile(appName, "disk"),
 		network: await readLastValueStatsFile(appName, "network"),
 		block: await readLastValueStatsFile(appName, "block"),
+		loadavg: await readLastValueStatsFile(appName, "loadavg"),
 	};
 };

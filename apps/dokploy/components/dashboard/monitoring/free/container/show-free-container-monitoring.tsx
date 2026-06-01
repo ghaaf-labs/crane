@@ -6,6 +6,7 @@ import { DockerBlockChart } from "./docker-block-chart";
 import { DockerCpuChart } from "./docker-cpu-chart";
 import { DockerDiskChart } from "./docker-disk-chart";
 import { DockerDiskUsageChart } from "./docker-disk-usage-chart";
+import { DockerLoadChart } from "./docker-load-chart";
 import { DockerMemoryChart } from "./docker-memory-chart";
 import { DockerNetworkChart } from "./docker-network-chart";
 
@@ -37,6 +38,10 @@ const defaultData = {
 	},
 	disk: {
 		value: { diskTotal: 0, diskUsage: 0, diskUsedPercentage: 0, diskFree: 0 },
+		time: "",
+	},
+	loadavg: {
+		value: { load1: 0, load5: 0, load15: 0, cores: 0 },
 		time: "",
 	},
 };
@@ -84,6 +89,16 @@ export interface DockerStats {
 
 		time: string;
 	};
+	// Host-only (recorded for appName "dokploy"): OS load average + core count.
+	loadavg: {
+		value: {
+			load1: number;
+			load5: number;
+			load15: number;
+			cores: number;
+		};
+		time: string;
+	};
 }
 
 export type DockerStatsJSON = {
@@ -92,6 +107,7 @@ export type DockerStatsJSON = {
 	block: DockerStats["block"][];
 	network: DockerStats["network"][];
 	disk: DockerStats["disk"][];
+	loadavg: DockerStats["loadavg"][];
 };
 
 export const convertMemoryToBytes = (
@@ -134,6 +150,7 @@ export const ContainerFreeMonitoring = ({
 		block: [],
 		network: [],
 		disk: [],
+		loadavg: [],
 	});
 	const [currentData, setCurrentData] = useState<DockerStats>(defaultData);
 
@@ -146,6 +163,7 @@ export const ContainerFreeMonitoring = ({
 			block: [],
 			network: [],
 			disk: [],
+			loadavg: [],
 		});
 	}, [appName]);
 
@@ -158,6 +176,7 @@ export const ContainerFreeMonitoring = ({
 			block: data.block[data.block.length - 1] ?? currentData.block,
 			network: data.network[data.network.length - 1] ?? currentData.network,
 			disk: data.disk[data.disk.length - 1] ?? currentData.disk,
+			loadavg: data.loadavg?.[data.loadavg.length - 1] ?? currentData.loadavg,
 		});
 		setAccumulativeData({
 			block: data?.block || [],
@@ -165,6 +184,7 @@ export const ContainerFreeMonitoring = ({
 			disk: data?.disk || [],
 			memory: data?.memory || [],
 			network: data?.network || [],
+			loadavg: data?.loadavg || [],
 		});
 	}, [data]);
 
@@ -183,6 +203,7 @@ export const ContainerFreeMonitoring = ({
 				block: value.data.block ?? currentData.block,
 				disk: value.data.disk ?? currentData.disk,
 				network: value.data.network ?? currentData.network,
+				loadavg: value.data.loadavg ?? currentData.loadavg,
 			};
 
 			setCurrentData(data);
@@ -194,6 +215,7 @@ export const ContainerFreeMonitoring = ({
 				block: [...prevData.block, data.block].slice(-MAX_DATA_POINTS),
 				network: [...prevData.network, data.network].slice(-MAX_DATA_POINTS),
 				disk: [...prevData.disk, data.disk].slice(-MAX_DATA_POINTS),
+				loadavg: [...prevData.loadavg, data.loadavg].slice(-MAX_DATA_POINTS),
 			}));
 		};
 
@@ -284,6 +306,26 @@ export const ContainerFreeMonitoring = ({
 									accumulativeData={accumulativeData.disk}
 									diskTotal={currentData.disk.value.diskTotal}
 								/>
+							</div>
+						</CardContent>
+					</Card>
+				)}
+				{appName === "dokploy" && (
+					<Card className="bg-background">
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="text-sm font-medium">
+								Load Average
+							</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<div className="flex flex-col gap-2 w-full">
+								<span className="text-sm text-muted-foreground">
+									{`1m: ${currentData.loadavg.value.load1}  / 5m: ${currentData.loadavg.value.load5}  / 15m: ${currentData.loadavg.value.load15}`}
+									{currentData.loadavg.value.cores > 0
+										? `  (${currentData.loadavg.value.cores} cores)`
+										: ""}
+								</span>
+								<DockerLoadChart accumulativeData={accumulativeData.loadavg} />
 							</div>
 						</CardContent>
 					</Card>
