@@ -736,8 +736,15 @@ export const settingsRouter = createTRPCRouter({
 	haveTraefikDashboardPortEnabled: adminProcedure
 		.input(apiServerSchema)
 		.query(async ({ input }) => {
-			const ports = await readPorts("dokploy-traefik", input?.serverId);
-			return ports.some((port) => port.targetPort === 8080);
+			try {
+				const ports = await readPorts("dokploy-traefik", input?.serverId);
+				return ports.some((port) => port.targetPort === 8080);
+			} catch {
+				// Traefik isn't running/inspectable yet (fresh install) → the
+				// dashboard port can't be enabled. Return false instead of 500ing
+				// the Web Server settings page.
+				return false;
+			}
 		}),
 
 	readStatsLogs: protectedProcedure
