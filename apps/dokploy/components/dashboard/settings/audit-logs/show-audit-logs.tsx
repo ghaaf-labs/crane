@@ -74,7 +74,13 @@ export const ShowAuditLogs = () => {
 	const [resourceName, setResourceName] = useState("");
 	const [action, setAction] = useState<string>(ANY);
 	const [resourceType, setResourceType] = useState<string>(ANY);
+	// Inclusive day boundaries from <input type="date"> (YYYY-MM-DD, local).
+	const [fromDate, setFromDate] = useState("");
+	const [toDate, setToDate] = useState("");
 	const [page, setPage] = useState(0);
+
+	const fromValue = fromDate ? new Date(`${fromDate}T00:00:00`) : undefined;
+	const toValue = toDate ? new Date(`${toDate}T23:59:59.999`) : undefined;
 
 	const filters = {
 		userEmail: userEmail.trim() || undefined,
@@ -84,6 +90,8 @@ export const ShowAuditLogs = () => {
 			resourceType === ANY
 				? undefined
 				: (resourceType as (typeof auditResourceTypes)[number]),
+		from: fromValue,
+		to: toValue,
 		limit: PAGE_SIZE,
 		offset: page * PAGE_SIZE,
 	};
@@ -101,6 +109,8 @@ export const ShowAuditLogs = () => {
 			resourceType === ANY
 				? undefined
 				: (resourceType as (typeof auditResourceTypes)[number]),
+		from: fromValue,
+		to: toValue,
 	};
 
 	const handleExport = async () => {
@@ -136,7 +146,9 @@ export const ShowAuditLogs = () => {
 		userEmail !== "" ||
 		resourceName !== "" ||
 		action !== ANY ||
-		resourceType !== ANY;
+		resourceType !== ANY ||
+		fromDate !== "" ||
+		toDate !== "";
 
 	const resetPageAnd =
 		<T,>(setter: (v: T) => void) =>
@@ -150,6 +162,8 @@ export const ShowAuditLogs = () => {
 		setResourceName("");
 		setAction(ANY);
 		setResourceType(ANY);
+		setFromDate("");
+		setToDate("");
 		setPage(0);
 	};
 
@@ -248,6 +262,26 @@ export const ShowAuditLogs = () => {
 										))}
 									</SelectContent>
 								</Select>
+							</div>
+							<div className="flex flex-col gap-1">
+								<span className="text-xs text-muted-foreground">From</span>
+								<Input
+									type="date"
+									className="w-[160px]"
+									value={fromDate}
+									max={toDate || undefined}
+									onChange={(e) => resetPageAnd(setFromDate)(e.target.value)}
+								/>
+							</div>
+							<div className="flex flex-col gap-1">
+								<span className="text-xs text-muted-foreground">To</span>
+								<Input
+									type="date"
+									className="w-[160px]"
+									value={toDate}
+									min={fromDate || undefined}
+									onChange={(e) => resetPageAnd(setToDate)(e.target.value)}
+								/>
 							</div>
 							{hasFilters && (
 								<Button
