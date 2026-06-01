@@ -12,7 +12,8 @@ import { execAsync, execAsyncRemote } from "../process/execAsync";
  * escaping embedded single quotes. Use for ALL user/DB-controlled values that
  * are spliced into a shell command string.
  */
-const shq = (value: string): string => `'${value.replace(/'/g, "'\\''")}'`;
+export const shq = (value: string): string =>
+	`'${value.replace(/'/g, "'\\''")}'`;
 
 interface CloneGitRepository {
 	appName: string;
