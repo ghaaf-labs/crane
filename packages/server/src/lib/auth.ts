@@ -272,18 +272,34 @@ const { handler, api } = betterAuth({
 			},
 			delete: {
 				after: async (session) => {
-					const orgId = (
+					// The deleted session may not carry activeOrganizationId (better-auth
+					// sign-out passes the bare session), so fall back to the user's
+					// default org — same resolution as the create.before hook — to keep
+					// sign-outs in the audit trail.
+					let orgId = (
 						session as typeof session & { activeOrganizationId?: string }
 					).activeOrganizationId;
-					if (!orgId) return;
-					const memberRecord = await db.query.member.findFirst({
-						where: and(
-							eq(schema.member.userId, session.userId),
-							eq(schema.member.organizationId, orgId),
-						),
-						with: { user: true },
-					});
-					if (!memberRecord) return;
+					let memberRecord = orgId
+						? await db.query.member.findFirst({
+								where: and(
+									eq(schema.member.userId, session.userId),
+									eq(schema.member.organizationId, orgId),
+								),
+								with: { user: true },
+							})
+						: undefined;
+					if (!memberRecord) {
+						memberRecord = await db.query.member.findFirst({
+							where: eq(schema.member.userId, session.userId),
+							orderBy: [
+								desc(schema.member.isDefault),
+								desc(schema.member.createdAt),
+							],
+							with: { user: true },
+						});
+						orgId = memberRecord?.organizationId;
+					}
+					if (!memberRecord || !orgId) return;
 					await createAuditLog({
 						organizationId: orgId,
 						userId: session.userId,
