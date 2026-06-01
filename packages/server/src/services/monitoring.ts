@@ -2,6 +2,7 @@ import { db } from "@crane/server/db";
 import {
 	applications,
 	compose,
+	environments,
 	libsql,
 	mariadb,
 	mongo,
@@ -50,8 +51,11 @@ export interface OrgServiceTarget {
  * Resolves a globally-unique service `appName` to the id of the organization
  * that owns it, by walking service → environment → project → organization.
  * Returns null for the host sentinel or any appName that maps to no service
- * (e.g. a stale/guessed name). This is the authorization anchor for monitoring:
- * appName alone is enough because appNames are unique across all service tables.
+ * (e.g. a stale/guessed name). This is the authorization anchor for monitoring,
+ * so it runs on every WebSocket connect and monitoring read: it does targeted,
+ * indexed point-lookups on each service table's (unique) appName rather than
+ * scanning all environments. Fails CLOSED — if an appName somehow matches more
+ * than one service (a uniqueness violation), it is treated as unresolved.
  */
 export const findOrganizationIdByAppName = async (
 	appName: string,
@@ -59,48 +63,58 @@ export const findOrganizationIdByAppName = async (
 	if (!appName || appName === HOST_MONITORING_APP_NAME) {
 		return null;
 	}
-	const envs = await db.query.environments.findMany({
-		with: {
-			project: { columns: { organizationId: true } },
-			applications: {
-				where: eq(applications.appName, appName),
-				columns: { applicationId: true },
-			},
-			compose: {
-				where: eq(compose.appName, appName),
-				columns: { composeId: true },
-			},
-			libsql: {
-				where: eq(libsql.appName, appName),
-				columns: { libsqlId: true },
-			},
-			mariadb: {
-				where: eq(mariadb.appName, appName),
-				columns: { mariadbId: true },
-			},
-			mongo: { where: eq(mongo.appName, appName), columns: { mongoId: true } },
-			mysql: { where: eq(mysql.appName, appName), columns: { mysqlId: true } },
-			postgres: {
-				where: eq(postgres.appName, appName),
-				columns: { postgresId: true },
-			},
-			redis: { where: eq(redis.appName, appName), columns: { redisId: true } },
-		},
+
+	const matches = await Promise.all([
+		db.query.applications.findFirst({
+			where: eq(applications.appName, appName),
+			columns: { environmentId: true },
+		}),
+		db.query.compose.findFirst({
+			where: eq(compose.appName, appName),
+			columns: { environmentId: true },
+		}),
+		db.query.postgres.findFirst({
+			where: eq(postgres.appName, appName),
+			columns: { environmentId: true },
+		}),
+		db.query.mysql.findFirst({
+			where: eq(mysql.appName, appName),
+			columns: { environmentId: true },
+		}),
+		db.query.mariadb.findFirst({
+			where: eq(mariadb.appName, appName),
+			columns: { environmentId: true },
+		}),
+		db.query.mongo.findFirst({
+			where: eq(mongo.appName, appName),
+			columns: { environmentId: true },
+		}),
+		db.query.redis.findFirst({
+			where: eq(redis.appName, appName),
+			columns: { environmentId: true },
+		}),
+		db.query.libsql.findFirst({
+			where: eq(libsql.appName, appName),
+			columns: { environmentId: true },
+		}),
+	]);
+
+	const environmentIds = matches
+		.filter((row): row is { environmentId: string } => row != null)
+		.map((row) => row.environmentId);
+	// Exactly one service must own the appName. Zero = not found; more than one =
+	// a uniqueness violation, denied defensively.
+	if (environmentIds.length !== 1) {
+		return null;
+	}
+
+	const environment = await db.query.environments.findFirst({
+		where: eq(environments.environmentId, environmentIds[0] as string),
+		columns: {},
+		with: { project: { columns: { organizationId: true } } },
 	});
 
-	const match = envs.find(
-		(env) =>
-			env.applications.length > 0 ||
-			env.compose.length > 0 ||
-			env.libsql.length > 0 ||
-			env.mariadb.length > 0 ||
-			env.mongo.length > 0 ||
-			env.mysql.length > 0 ||
-			env.postgres.length > 0 ||
-			env.redis.length > 0,
-	);
-
-	return match?.project?.organizationId ?? null;
+	return environment?.project?.organizationId ?? null;
 };
 
 /**

@@ -5,8 +5,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // metrics are instance-owner-only, and the instance owner can monitor anything.
 
 let userRow: { isInstanceAdmin: boolean } | undefined;
-let envRows: unknown[];
 let isCloud = false;
+// One slot per service table, in the order the resolver queries them:
+// applications, compose, postgres, mysql, mariadb, mongo, redis, libsql.
+let serviceEnvIds: (string | undefined)[];
+// The org id returned when resolving an environmentId → project → org.
+let resolvedOrgId: string | null;
+// Rows returned by environments.findMany (for listOrgServices).
+let listEnvs: unknown[];
 
 vi.mock("@crane/server/constants", async (importOriginal) => {
 	const actual =
@@ -19,70 +25,89 @@ vi.mock("@crane/server/constants", async (importOriginal) => {
 	};
 });
 
-vi.mock("@crane/server/db", () => ({
-	db: {
-		query: {
-			user: { findFirst: vi.fn(() => Promise.resolve(userRow)) },
-			environments: { findMany: vi.fn(() => Promise.resolve(envRows)) },
+vi.mock("@crane/server/db", () => {
+	const serviceTable = (idx: number) => ({
+		findFirst: vi.fn(() =>
+			Promise.resolve(
+				serviceEnvIds[idx] ? { environmentId: serviceEnvIds[idx] } : undefined,
+			),
+		),
+	});
+	return {
+		db: {
+			query: {
+				user: { findFirst: vi.fn(() => Promise.resolve(userRow)) },
+				applications: serviceTable(0),
+				compose: serviceTable(1),
+				postgres: serviceTable(2),
+				mysql: serviceTable(3),
+				mariadb: serviceTable(4),
+				mongo: serviceTable(5),
+				redis: serviceTable(6),
+				libsql: serviceTable(7),
+				environments: {
+					findFirst: vi.fn(() =>
+						Promise.resolve(
+							resolvedOrgId
+								? { project: { organizationId: resolvedOrgId } }
+								: undefined,
+						),
+					),
+					findMany: vi.fn(() => Promise.resolve(listEnvs)),
+				},
+			},
 		},
-	},
-}));
-
-const { canAccessAppMonitoring, findOrganizationIdByAppName } = await import(
-	"@crane/server/services/monitoring"
-);
-
-// Builds an environment row as the relational query would return it after
-// filtering each service relation by appName (matching rows present, rest empty).
-const envWithApp = (organizationId: string) => ({
-	environmentId: "env-1",
-	name: "production",
-	project: { projectId: "p1", name: "Proj", organizationId },
-	applications: [{ applicationId: "a1" }],
-	compose: [],
-	libsql: [],
-	mariadb: [],
-	mongo: [],
-	mysql: [],
-	postgres: [],
-	redis: [],
+	};
 });
 
-const emptyEnv = () => ({
-	environmentId: "env-1",
-	name: "production",
-	project: { projectId: "p1", name: "Proj", organizationId: "org-A" },
-	applications: [],
-	compose: [],
-	libsql: [],
-	mariadb: [],
-	mongo: [],
-	mysql: [],
-	postgres: [],
-	redis: [],
-});
+const { canAccessAppMonitoring, findOrganizationIdByAppName, listOrgServices } =
+	await import("@crane/server/services/monitoring");
+
+// Sets up the resolver so `appName` is owned by `orgId` via one service table.
+const ownedBy = (orgId: string, tableIndex = 0) => {
+	serviceEnvIds[tableIndex] = "env-1";
+	resolvedOrgId = orgId;
+};
 
 beforeEach(() => {
 	vi.clearAllMocks();
 	isCloud = false;
 	userRow = { isInstanceAdmin: false };
-	envRows = [];
+	serviceEnvIds = [
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+	];
+	resolvedOrgId = null;
+	listEnvs = [];
 });
 
 describe("findOrganizationIdByAppName", () => {
-	it("returns the owning org id when a service matches", async () => {
-		envRows = [envWithApp("org-A")];
+	it("returns the owning org id when exactly one service matches", async () => {
+		ownedBy("org-A");
 		await expect(findOrganizationIdByAppName("app-foo")).resolves.toBe("org-A");
 	});
 
 	it("returns null for the host sentinel without querying", async () => {
-		envRows = [envWithApp("org-A")];
+		ownedBy("org-A");
 		await expect(findOrganizationIdByAppName("dokploy")).resolves.toBeNull();
 	});
 
 	it("returns null when no service matches the appName", async () => {
-		envRows = [emptyEnv()];
 		await expect(findOrganizationIdByAppName("ghost")).resolves.toBeNull();
+	});
+
+	it("fails closed when an appName matches more than one service", async () => {
+		// Uniqueness violation across tables → denied (do not resolve an org).
+		serviceEnvIds[0] = "env-1";
+		serviceEnvIds[2] = "env-2";
+		resolvedOrgId = "org-A";
+		await expect(findOrganizationIdByAppName("dupe")).resolves.toBeNull();
 	});
 });
 
@@ -109,7 +134,7 @@ describe("canAccessAppMonitoring", () => {
 	});
 
 	it("allows a non-owner to monitor a service in their active org", async () => {
-		envRows = [envWithApp("org-A")];
+		ownedBy("org-A");
 		await expect(
 			canAccessAppMonitoring({
 				userId: "u",
@@ -120,7 +145,7 @@ describe("canAccessAppMonitoring", () => {
 	});
 
 	it("DENIES a non-owner monitoring a service owned by another org", async () => {
-		envRows = [envWithApp("org-B")];
+		ownedBy("org-B");
 		await expect(
 			canAccessAppMonitoring({
 				userId: "u",
@@ -131,7 +156,7 @@ describe("canAccessAppMonitoring", () => {
 	});
 
 	it("denies when the caller has no active organization", async () => {
-		envRows = [envWithApp("org-A")];
+		ownedBy("org-A");
 		await expect(
 			canAccessAppMonitoring({
 				userId: "u",
@@ -142,7 +167,6 @@ describe("canAccessAppMonitoring", () => {
 	});
 
 	it("denies an unknown appName", async () => {
-		envRows = [emptyEnv()];
 		await expect(
 			canAccessAppMonitoring({
 				userId: "u",
@@ -150,5 +174,39 @@ describe("canAccessAppMonitoring", () => {
 				appName: "ghost",
 			}),
 		).resolves.toBe(false);
+	});
+});
+
+describe("listOrgServices", () => {
+	const envRow = (organizationId: string, appName: string) => ({
+		environmentId: `env-${organizationId}`,
+		name: "production",
+		project: {
+			projectId: `p-${organizationId}`,
+			name: "Proj",
+			organizationId,
+			organization: { name: `Org ${organizationId}` },
+		},
+		applications: [{ appName, name: appName }],
+		compose: [],
+		libsql: [],
+		mariadb: [],
+		mongo: [],
+		mysql: [],
+		postgres: [],
+		redis: [],
+	});
+
+	it("returns only the active org's services, never another org's", async () => {
+		listEnvs = [envRow("org-A", "app-a"), envRow("org-B", "app-b")];
+		const services = await listOrgServices("org-A");
+		expect(services).toHaveLength(1);
+		expect(services[0]?.appName).toBe("app-a");
+		expect(services[0]?.organizationId).toBe("org-A");
+	});
+
+	it("returns an empty list for an org with no services", async () => {
+		listEnvs = [envRow("org-B", "app-b")];
+		await expect(listOrgServices("org-A")).resolves.toEqual([]);
 	});
 });
