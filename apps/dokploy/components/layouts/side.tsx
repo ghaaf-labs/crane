@@ -5,7 +5,6 @@ import {
 	BarChartHorizontalBigIcon,
 	Bell,
 	BlocksIcon,
-	BookIcon,
 	BotIcon,
 	Boxes,
 	ChevronRight,
@@ -122,21 +121,11 @@ type NavItem =
 			isEnabled?: (opts: EnabledOpts) => boolean;
 	  };
 
-// ExternalLink type
-// Represents an external link item (used for the help section)
-type ExternalLink = {
-	name: string;
-	url: string;
-	icon: React.ComponentType<{ className?: string }>;
-	isEnabled?: (opts: EnabledOpts) => boolean;
-};
-
 // Menu type
 // Consists of home, settings, and help items
 type Menu = {
 	home: NavItem[];
 	settings: NavItem[];
-	help: ExternalLink[];
 };
 
 // Menu items
@@ -393,14 +382,6 @@ const MENU: Menu = {
 			isEnabled: ({ auth, isCloud }) => !!(auth?.role === "owner" && isCloud),
 		},
 	],
-
-	help: [
-		{
-			name: "Documentation",
-			url: "https://github.com/ghaaf-labs/crane",
-			icon: BookIcon,
-		},
-	],
 } as const;
 
 /**
@@ -432,7 +413,6 @@ function createMenuForAuthUser(opts: {
 	return {
 		home: filterEnabled(MENU.home),
 		settings: filterEnabled(MENU.settings),
-		help: filterEnabled(MENU.help),
 	};
 }
 
@@ -861,7 +841,6 @@ export default function Page({ children }: Props) {
 	const {
 		home: filteredHome,
 		settings: filteredSettings,
-		help,
 	} = createMenuForAuthUser({
 		auth,
 		permissions,
@@ -1081,28 +1060,6 @@ export default function Page({ children }: Props) {
 									</Collapsible>
 								);
 							})}
-						</SidebarMenu>
-					</SidebarGroup>
-					<SidebarGroup className="group-data-[collapsible=icon]:hidden">
-						<SidebarGroupLabel>Extra</SidebarGroupLabel>
-						<SidebarMenu>
-							{help.map((item: ExternalLink) => (
-								<SidebarMenuItem key={item.name}>
-									<SidebarMenuButton asChild>
-										<a
-											href={item.url}
-											target="_blank"
-											rel="noopener noreferrer"
-											className="flex w-full items-center gap-2"
-										>
-											<span className="mr-2">
-												<item.icon className="h-4 w-4" />
-											</span>
-											<span>{item.name}</span>
-										</a>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
-							))}
 						</SidebarMenu>
 					</SidebarGroup>
 				</SidebarContent>
