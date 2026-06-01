@@ -838,14 +838,12 @@ export default function Page({ children }: Props) {
 	const includesProjects = pathname?.includes("/dashboard/project");
 	const { data: isCloud } = api.settings.isCloud.useQuery();
 
-	const {
-		home: filteredHome,
-		settings: filteredSettings,
-	} = createMenuForAuthUser({
-		auth,
-		permissions,
-		isCloud: !!isCloud,
-	});
+	const { home: filteredHome, settings: filteredSettings } =
+		createMenuForAuthUser({
+			auth,
+			permissions,
+			isCloud: !!isCloud,
+		});
 
 	const activeItem = findActiveNavItem(
 		[...filteredHome, ...filteredSettings],
