@@ -121,9 +121,9 @@ export const TeamsIcon = ({ className }: Props) => {
 					x="180"
 					y="270"
 					fill="#fff"
-					font-family="Segoe UI, Arial, sans-serif"
-					font-size="110"
-					font-weight="bold"
+					fontFamily="Segoe UI, Arial, sans-serif"
+					fontSize="110"
+					fontWeight="bold"
 				>
 					T
 				</text>
