@@ -41,6 +41,69 @@ export const buildLoadAverageStat = (
 	};
 };
 
+type CpuTimes = {
+	user: number;
+	nice: number;
+	sys: number;
+	idle: number;
+	irq: number;
+};
+
+/**
+ * Pure: per-core CPU busy-% between two os.cpus() time snapshots. CPU times are
+ * cumulative tick counters, so utilisation must be derived from the delta:
+ * busy% = (1 - idleΔ/totalΔ) * 100, clamped to [0,100]. Length mismatch or a
+ * non-positive interval yields zeros (one baseline reading).
+ */
+export const computePerCoreUsage = (
+	prev: CpuTimes[],
+	curr: CpuTimes[],
+): number[] => {
+	if (prev.length !== curr.length || curr.length === 0) {
+		return curr.map(() => 0);
+	}
+	const total = (t: CpuTimes) => t.user + t.nice + t.sys + t.idle + t.irq;
+	return curr.map((c, i) => {
+		const p = prev[i];
+		if (!p) return 0;
+		const idleDelta = c.idle - p.idle;
+		const totalDelta = total(c) - total(p);
+		if (totalDelta <= 0) return 0;
+		const usage = (1 - idleDelta / totalDelta) * 100;
+		return Math.max(0, Math.min(100, Math.round(usage * 10) / 10));
+	});
+};
+
+let prevCpuTimes: CpuTimes[] | null = null;
+let lastPerCoreResult: number[] = [];
+let lastPerCoreSampleMs = 0;
+const PER_CORE_MIN_INTERVAL_MS = 500;
+
+/**
+ * Per-core CPU busy-% sampled against the previous reading (CPU times are
+ * cumulative, so a delta gives the per-interval rate). The first call returns
+ * zeros (no baseline yet). Host-only.
+ *
+ * A short coalescing window guards the shared baseline: multiple dashboard tabs
+ * each drive their own WS sampling tick, so without it two near-simultaneous
+ * calls would compare against an almost-identical snapshot and read ~0. Within
+ * the window we return the cached result instead of resetting the baseline.
+ */
+export const getPerCoreCpuUsage = (): number[] => {
+	const nowMs = Date.now();
+	if (prevCpuTimes && nowMs - lastPerCoreSampleMs < PER_CORE_MIN_INTERVAL_MS) {
+		return lastPerCoreResult;
+	}
+	const curr = os.cpus().map((c) => c.times);
+	const result = prevCpuTimes
+		? computePerCoreUsage(prevCpuTimes, curr)
+		: curr.map(() => 0);
+	prevCpuTimes = curr;
+	lastPerCoreSampleMs = nowMs;
+	lastPerCoreResult = result;
+	return result;
+};
+
 export interface HostSystemInfo {
 	cpuModel: string;
 	cpuCores: number;
@@ -162,6 +225,8 @@ export const recordAdvancedStats = async (
 		if (swap) {
 			await updateStatsFile(appName, "swap", swap);
 		}
+
+		await updateStatsFile(appName, "percore", getPerCoreCpuUsage());
 	}
 };
 
@@ -270,6 +335,7 @@ export const getAdvancedStats = async (appName: string) => {
 		block: await readStatsFile(appName, "block"),
 		loadavg: await readStatsFile(appName, "loadavg"),
 		swap: await readStatsFile(appName, "swap"),
+		percore: await readStatsFile(appName, "percore"),
 	};
 };
 
@@ -282,7 +348,8 @@ export const readStatsFile = async (
 		| "network"
 		| "block"
 		| "loadavg"
-		| "swap",
+		| "swap"
+		| "percore",
 ) => {
 	try {
 		const { MONITORING_PATH } = paths();
@@ -303,7 +370,8 @@ export const updateStatsFile = async (
 		| "network"
 		| "block"
 		| "loadavg"
-		| "swap",
+		| "swap"
+		| "percore",
 	value: number | string | unknown,
 ) => {
 	const { MONITORING_PATH } = paths();
@@ -330,7 +398,8 @@ export const readLastValueStatsFile = async (
 		| "network"
 		| "block"
 		| "loadavg"
-		| "swap",
+		| "swap"
+		| "percore",
 ) => {
 	try {
 		const { MONITORING_PATH } = paths();
@@ -352,5 +421,6 @@ export const getLastAdvancedStatsFile = async (appName: string) => {
 		block: await readLastValueStatsFile(appName, "block"),
 		loadavg: await readLastValueStatsFile(appName, "loadavg"),
 		swap: await readLastValueStatsFile(appName, "swap"),
+		percore: await readLastValueStatsFile(appName, "percore"),
 	};
 };

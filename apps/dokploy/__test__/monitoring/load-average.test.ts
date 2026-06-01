@@ -1,9 +1,18 @@
 import {
 	buildLoadAverageStat,
+	computePerCoreUsage,
 	getHostSystemInfo,
 	parseSwapFromMeminfo,
 } from "@crane/server/monitoring/utils";
 import { describe, expect, it } from "vitest";
+
+const t = (user: number, idle: number) => ({
+	user,
+	nice: 0,
+	sys: 0,
+	idle,
+	irq: 0,
+});
 
 describe("buildLoadAverageStat", () => {
 	it("shapes os.loadavg() + core count, rounding to 2 decimals", () => {
@@ -79,6 +88,37 @@ describe("parseSwapFromMeminfo", () => {
 		// free is clamped to total (1024 kB → 1 MB), not left as the raw 2 MB
 		expect(swap?.swapFree).toBe(1);
 		expect(swap?.swapTotal).toBe(1);
+	});
+});
+
+describe("computePerCoreUsage", () => {
+	it("computes per-core busy% from cumulative tick deltas", () => {
+		// core0: +50 user, +50 idle over interval → 50% busy
+		// core1: +90 user, +10 idle → 90% busy
+		const prev = [t(0, 0), t(0, 0)];
+		const curr = [t(50, 50), t(90, 10)];
+		expect(computePerCoreUsage(prev, curr)).toEqual([50, 90]);
+	});
+
+	it("returns 0 for a fully idle core and 100 for a fully busy core", () => {
+		const prev = [t(0, 0), t(0, 0)];
+		const curr = [t(0, 100), t(100, 0)];
+		expect(computePerCoreUsage(prev, curr)).toEqual([0, 100]);
+	});
+
+	it("yields zeros on a length mismatch or no interval", () => {
+		expect(computePerCoreUsage([t(0, 0)], [t(1, 1), t(2, 2)])).toEqual([0, 0]);
+		// no tick movement → totalDelta 0 → 0
+		expect(computePerCoreUsage([t(5, 5)], [t(5, 5)])).toEqual([0]);
+	});
+
+	it("clamps a counter reset (negative delta) to 0", () => {
+		expect(computePerCoreUsage([t(100, 100)], [t(0, 0)])).toEqual([0]);
+	});
+
+	it("clamps to 100 when idle goes backwards but total advances", () => {
+		// idleΔ = 40-50 = -10, totalΔ = (160+40)-(50+50) = 100 → (1-(-10/100))*100 = 110 → 100
+		expect(computePerCoreUsage([t(50, 50)], [t(160, 40)])).toEqual([100]);
 	});
 });
 

@@ -49,6 +49,10 @@ const defaultData = {
 		value: { swapTotal: 0, swapUsed: 0, swapFree: 0, swapUsedPercentage: 0 },
 		time: "",
 	},
+	percore: {
+		value: [] as number[],
+		time: "",
+	},
 };
 
 interface Props {
@@ -114,6 +118,11 @@ export interface DockerStats {
 		};
 		time: string;
 	};
+	// Host-only: per-core CPU busy-% (one entry per logical core).
+	percore: {
+		value: number[];
+		time: string;
+	};
 }
 
 export type DockerStatsJSON = {
@@ -124,6 +133,7 @@ export type DockerStatsJSON = {
 	disk: DockerStats["disk"][];
 	loadavg: DockerStats["loadavg"][];
 	swap: DockerStats["swap"][];
+	percore: DockerStats["percore"][];
 };
 
 export const convertMemoryToBytes = (
@@ -174,6 +184,7 @@ export const ContainerFreeMonitoring = ({
 		disk: [],
 		loadavg: [],
 		swap: [],
+		percore: [],
 	});
 	const [currentData, setCurrentData] = useState<DockerStats>(defaultData);
 
@@ -188,6 +199,7 @@ export const ContainerFreeMonitoring = ({
 			disk: [],
 			loadavg: [],
 			swap: [],
+			percore: [],
 		});
 	}, [appName]);
 
@@ -202,6 +214,7 @@ export const ContainerFreeMonitoring = ({
 			disk: data.disk[data.disk.length - 1] ?? currentData.disk,
 			loadavg: data.loadavg?.[data.loadavg.length - 1] ?? currentData.loadavg,
 			swap: data.swap?.[data.swap.length - 1] ?? currentData.swap,
+			percore: data.percore?.[data.percore.length - 1] ?? currentData.percore,
 		});
 		setAccumulativeData({
 			block: data?.block || [],
@@ -211,6 +224,7 @@ export const ContainerFreeMonitoring = ({
 			network: data?.network || [],
 			loadavg: data?.loadavg || [],
 			swap: data?.swap || [],
+			percore: data?.percore || [],
 		});
 	}, [data]);
 
@@ -231,6 +245,7 @@ export const ContainerFreeMonitoring = ({
 				network: value.data.network ?? currentData.network,
 				loadavg: value.data.loadavg ?? currentData.loadavg,
 				swap: value.data.swap ?? currentData.swap,
+				percore: value.data.percore ?? currentData.percore,
 			};
 
 			setCurrentData(data);
@@ -244,6 +259,7 @@ export const ContainerFreeMonitoring = ({
 				disk: [...prevData.disk, data.disk].slice(-MAX_DATA_POINTS),
 				loadavg: [...prevData.loadavg, data.loadavg].slice(-MAX_DATA_POINTS),
 				swap: [...prevData.swap, data.swap].slice(-MAX_DATA_POINTS),
+				percore: [...prevData.percore, data.percore].slice(-MAX_DATA_POINTS),
 			}));
 		};
 
@@ -392,6 +408,33 @@ export const ContainerFreeMonitoring = ({
 									{`Used: ${currentData.swap.value.swapUsed} MB / ${currentData.swap.value.swapTotal} MB (${currentData.swap.value.swapUsedPercentage}%)`}
 								</span>
 								<DockerSwapChart accumulativeData={accumulativeData.swap} />
+							</div>
+						</CardContent>
+					</Card>
+				)}
+				{appName === "dokploy" && currentData.percore.value.length > 0 && (
+					<Card className="bg-background">
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="text-sm font-medium">
+								Per-Core CPU
+							</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<div className="grid grid-cols-2 gap-x-4 gap-y-2">
+								{currentData.percore.value.map((pct, index) => (
+									<div
+										key={`core-${index}`}
+										className="flex items-center gap-2"
+									>
+										<span className="text-xs text-muted-foreground w-12 shrink-0">
+											Core {index}
+										</span>
+										<Progress value={pct} className="flex-1" />
+										<span className="text-xs w-10 text-right tabular-nums shrink-0">
+											{pct}%
+										</span>
+									</div>
+								))}
 							</div>
 						</CardContent>
 					</Card>
