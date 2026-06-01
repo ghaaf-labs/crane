@@ -72,6 +72,61 @@ export const getContainers = async (serverId?: string | null) => {
 	}
 };
 
+export interface HostDockerSummary {
+	runningContainers: number;
+	totalContainers: number;
+	images: number;
+}
+
+/**
+ * Pure: derive a host Docker summary from `docker ps -a --format {{.State}}`
+ * stdout and `docker images -q` stdout. Tested without running docker.
+ */
+export const summarizeDockerPs = (
+	statesStdout: string,
+	imagesStdout: string,
+): HostDockerSummary => {
+	const states = statesStdout.trim()
+		? statesStdout
+				.trim()
+				.split("\n")
+				.map((s) => s.trim())
+		: [];
+	const imageIds = imagesStdout.trim()
+		? imagesStdout
+				.trim()
+				.split("\n")
+				.map((s) => s.trim())
+				.filter(Boolean)
+		: [];
+	return {
+		totalContainers: states.length,
+		runningContainers: states.filter((s) => s === "running").length,
+		// `docker images -q` can repeat an id for multiple tags; count unique.
+		images: new Set(imageIds).size,
+	};
+};
+
+/**
+ * Host Docker overview (running/total containers + image count) for the Admin
+ * monitoring view. Degrades to zeroes if the docker CLI is unavailable so the
+ * page never errors on a host without Docker.
+ */
+export const getHostDockerSummary = async (): Promise<HostDockerSummary> => {
+	try {
+		const [states, images] = await Promise.all([
+			execAsync("docker ps -a --format '{{.State}}'"),
+			execAsync("docker images -q"),
+		]);
+		return summarizeDockerPs(states.stdout, images.stdout);
+	} catch (error) {
+		console.warn(
+			`Host docker summary unavailable: ${error instanceof Error ? error.message : error}`,
+		);
+		return { runningContainers: 0, totalContainers: 0, images: 0 };
+	}
+};
+
 export const getConfig = async (
 	containerId: string,
 	serverId?: string | null,

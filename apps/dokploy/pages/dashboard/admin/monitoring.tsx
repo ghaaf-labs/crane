@@ -11,6 +11,18 @@ import { api } from "@/utils/api";
 // machine metrics plus every service across every organization.
 const Page = () => {
 	const { data: services = [] } = api.monitoring.listAllServices.useQuery();
+	const { data: docker } = api.monitoring.hostDockerSummary.useQuery(
+		undefined,
+		{
+			refetchInterval: 15000,
+		},
+	);
+
+	const dockerStats = [
+		{ label: "Containers running", value: docker?.runningContainers ?? 0 },
+		{ label: "Containers total", value: docker?.totalContainers ?? 0 },
+		{ label: "Images", value: docker?.images ?? 0 },
+	];
 
 	return (
 		<div className="flex flex-col gap-8 pb-10">
@@ -20,6 +32,21 @@ const Page = () => {
 					<p className="text-sm text-muted-foreground">
 						Whole-machine usage for the server running Crane.
 					</p>
+				</div>
+				<div className="grid grid-cols-3 gap-4">
+					{dockerStats.map((stat) => (
+						<Card
+							key={stat.label}
+							className="bg-background p-4 flex flex-col gap-1"
+						>
+							<span className="text-xs uppercase tracking-wider text-muted-foreground">
+								{stat.label}
+							</span>
+							<span className="text-2xl font-semibold tabular-nums">
+								{stat.value}
+							</span>
+						</Card>
+					))}
 				</div>
 				<Card className="h-full bg-sidebar p-2.5 rounded-xl">
 					<div className="rounded-xl bg-background shadow-md p-6">

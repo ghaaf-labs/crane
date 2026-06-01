@@ -1,4 +1,8 @@
-import { listAllServices, listOrgServices } from "@crane/server";
+import {
+	getHostDockerSummary,
+	listAllServices,
+	listOrgServices,
+} from "@crane/server";
 import {
 	adminInstanceProcedure,
 	createTRPCRouter,
@@ -14,4 +18,6 @@ export const monitoringRouter = createTRPCRouter({
 	),
 	// Instance-wide: every org's services. Gated to the instance owner (root).
 	listAllServices: adminInstanceProcedure.query(() => listAllServices()),
+	// Instance-wide host Docker overview (container/image counts). Owner-only.
+	hostDockerSummary: adminInstanceProcedure.query(() => getHostDockerSummary()),
 });
