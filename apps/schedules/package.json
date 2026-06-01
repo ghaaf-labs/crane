@@ -10,7 +10,7 @@
 	},
 	"dependencies": {
 		"@crane/server": "workspace:*",
-		"@hono/node-server": "^1.14.3",
+		"@hono/node-server": "^1.19.13",
 		"@hono/zod-validator": "0.7.6",
 		"bullmq": "5.77.6",
 		"dotenv": "^16.4.5",

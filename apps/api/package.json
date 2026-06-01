@@ -11,11 +11,11 @@
 	},
 	"dependencies": {
 		"@crane/server": "workspace:*",
-		"@hono/node-server": "^1.14.3",
+		"@hono/node-server": "^1.19.13",
 		"@hono/zod-validator": "0.7.6",
 		"dotenv": "^16.4.5",
 		"hono": "^4.12.18",
-		"inngest": "3.40.1",
+		"inngest": "3.54.0",
 		"pino": "9.4.0",
 		"pino-pretty": "11.2.2",
 		"react": "18.2.0",
