@@ -12,6 +12,7 @@ import { db } from "@crane/server/db";
 import type { statements } from "@crane/server/lib/access-control";
 import { validateRequest } from "@crane/server/lib/auth";
 import { checkPermission } from "@crane/server/services/permission";
+import { isInstanceAdmin } from "@crane/server/services/user";
 import type { OpenApiMeta } from "@dokploy/trpc-openapi";
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { CreateNextContextOptions } from "@trpc/server/adapters/next";
@@ -201,6 +202,28 @@ export const adminProcedure = t.procedure.use(({ ctx, next }) => {
 			session: ctx.session,
 			user: ctx.user,
 			// session: { ...ctx.session, user: ctx.user },
+		},
+	});
+});
+
+/**
+ * Instance-admin (root) procedure — Crane.
+ *
+ * Gates the instance-wide Admin section: host monitoring, all-org container
+ * metrics, and the relocated Web Server / Cluster settings. Unlike
+ * `adminProcedure` (which checks the caller's role in the ACTIVE org), this
+ * verifies the caller is the single instance owner via the explicit
+ * `user.isInstanceAdmin` flag. Self-host only (the helper returns false on
+ * cloud), matching the self-host-only nature of host/cluster management.
+ */
+export const adminInstanceProcedure = t.procedure.use(async ({ ctx, next }) => {
+	if (!ctx.session || !ctx.user || !(await isInstanceAdmin(ctx.user.id))) {
+		throw new TRPCError({ code: "UNAUTHORIZED" });
+	}
+	return next({
+		ctx: {
+			session: ctx.session,
+			user: ctx.user,
 		},
 	});
 });

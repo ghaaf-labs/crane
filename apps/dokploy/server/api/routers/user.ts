@@ -12,6 +12,7 @@ import {
 	IS_CLOUD,
 	removeUserById,
 	renderInvitationEmail,
+	isInstanceAdmin as resolveIsInstanceAdmin,
 	sendEmailNotification,
 	sendResendNotification,
 	updateUser,
@@ -161,6 +162,12 @@ export const userRouter = createTRPCRouter({
 			return true;
 		}
 		return false;
+	}),
+	// Crane: is the caller the single instance owner (root)? Gates the Admin
+	// section in the UI (host monitoring, all-org metrics, Web Server / Cluster).
+	// Self-host only — see isInstanceAdmin() in the server user service.
+	isInstanceAdmin: protectedProcedure.query(async ({ ctx }) => {
+		return resolveIsInstanceAdmin(ctx.user.id);
 	}),
 	getBackups: adminProcedure.query(async ({ ctx }) => {
 		const memberResult = await db.query.member.findFirst({

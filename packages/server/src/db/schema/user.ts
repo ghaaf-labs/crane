@@ -6,6 +6,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { nanoid } from "nanoid";
@@ -25,47 +26,63 @@ import { ssoProvider } from "./sso";
 // OLD TABLE
 
 // TEMP
-export const user = pgTable("user", {
-	id: text("id")
-		.notNull()
-		.primaryKey()
-		.$defaultFn(() => nanoid()),
-	firstName: text("firstName").notNull().default(""),
-	lastName: text("lastName").notNull().default(""),
-	isRegistered: boolean("isRegistered").notNull().default(false),
-	expirationDate: text("expirationDate")
-		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	createdAt2: text("createdAt")
-		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	createdAt: timestamp("created_at").defaultNow(),
-	// Auth
-	twoFactorEnabled: boolean("two_factor_enabled"),
-	email: text("email").notNull().unique(),
-	emailVerified: boolean("email_verified").notNull(),
-	image: text("image"),
-	banned: boolean("banned"),
-	banReason: text("ban_reason"),
-	banExpires: timestamp("ban_expires"),
-	updatedAt: timestamp("updated_at").notNull(),
-	// Admin
-	role: text("role").notNull().default("user"),
-	// Metrics
-	enablePaidFeatures: boolean("enablePaidFeatures").notNull().default(false),
-	allowImpersonation: boolean("allowImpersonation").notNull().default(false),
-	stripeCustomerId: text("stripeCustomerId"),
-	stripeSubscriptionId: text("stripeSubscriptionId"),
-	serversQuantity: integer("serversQuantity").notNull().default(0),
-	sendInvoiceNotifications: boolean("sendInvoiceNotifications")
-		.notNull()
-		.default(false),
-	isEnterpriseCloud: boolean("isEnterpriseCloud").notNull().default(false),
-	trustedOrigins: text("trustedOrigins").array(),
-	bookmarkedTemplates: text("bookmarkedTemplates")
-		.array()
-		.default(sql`ARRAY[]::text[]`),
-});
+export const user = pgTable(
+	"user",
+	{
+		id: text("id")
+			.notNull()
+			.primaryKey()
+			.$defaultFn(() => nanoid()),
+		firstName: text("firstName").notNull().default(""),
+		lastName: text("lastName").notNull().default(""),
+		isRegistered: boolean("isRegistered").notNull().default(false),
+		expirationDate: text("expirationDate")
+			.notNull()
+			.$defaultFn(() => new Date().toISOString()),
+		createdAt2: text("createdAt")
+			.notNull()
+			.$defaultFn(() => new Date().toISOString()),
+		createdAt: timestamp("created_at").defaultNow(),
+		// Auth
+		twoFactorEnabled: boolean("two_factor_enabled"),
+		email: text("email").notNull().unique(),
+		emailVerified: boolean("email_verified").notNull(),
+		image: text("image"),
+		banned: boolean("banned"),
+		banReason: text("ban_reason"),
+		banExpires: timestamp("ban_expires"),
+		updatedAt: timestamp("updated_at").notNull(),
+		// Admin
+		role: text("role").notNull().default("user"),
+		// Crane: the single instance owner / root user (self-host). Distinct from the
+		// per-org owner/admin role. Gates the instance-wide Admin section (host
+		// monitoring, all-org container metrics, Web Server / Cluster settings).
+		// Seeded to the earliest-created user by migration; at most one true value.
+		isInstanceAdmin: boolean("is_instance_admin").notNull().default(false),
+		// Metrics
+		enablePaidFeatures: boolean("enablePaidFeatures").notNull().default(false),
+		allowImpersonation: boolean("allowImpersonation").notNull().default(false),
+		stripeCustomerId: text("stripeCustomerId"),
+		stripeSubscriptionId: text("stripeSubscriptionId"),
+		serversQuantity: integer("serversQuantity").notNull().default(0),
+		sendInvoiceNotifications: boolean("sendInvoiceNotifications")
+			.notNull()
+			.default(false),
+		isEnterpriseCloud: boolean("isEnterpriseCloud").notNull().default(false),
+		trustedOrigins: text("trustedOrigins").array(),
+		bookmarkedTemplates: text("bookmarkedTemplates")
+			.array()
+			.default(sql`ARRAY[]::text[]`),
+	},
+	(table) => ({
+		// Crane: enforce at most one instance owner (partial unique index over the
+		// `true` rows). Application logic seeds exactly one (migration backfill +
+		// first-user auth hook); this is the DB-level backstop.
+		oneInstanceAdmin: uniqueIndex("user_one_instance_admin_idx")
+			.on(table.isInstanceAdmin)
+			.where(sql`${table.isInstanceAdmin} = true`),
+	}),
+);
 
 export const usersRelations = relations(user, ({ one, many }) => ({
 	account: one(account, {

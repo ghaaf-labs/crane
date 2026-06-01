@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "user_one_instance_admin_idx" ON "user" USING btree ("is_instance_admin") WHERE "user"."is_instance_admin" = true;

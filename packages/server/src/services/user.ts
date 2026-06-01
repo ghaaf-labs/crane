@@ -1,3 +1,4 @@
+import { IS_CLOUD } from "@crane/server/constants";
 import { db } from "@crane/server/db";
 import {
 	account,
@@ -237,6 +238,30 @@ export const checkServiceAccess = async (
 			message: "Permission denied",
 		});
 	}
+};
+
+/**
+ * Crane: is this user the single instance owner (root)?
+ *
+ * Self-host has no instance-admin role distinct from the per-org owner, so the
+ * instance owner is an explicit flag on the user row (`isInstanceAdmin`), seeded
+ * to the earliest user by migration 0170 and to the first user by the auth
+ * `user.create.after` hook. The Admin section it gates (host monitoring,
+ * all-org container metrics, Web Server / Cluster settings) is an instance-wide,
+ * self-host-only concern, so cloud always returns false.
+ *
+ * Queries the row directly rather than trusting a (possibly unexposed) field on
+ * the better-auth session user, so callers can rely on it for authorization.
+ */
+export const isInstanceAdmin = async (userId: string): Promise<boolean> => {
+	if (IS_CLOUD) {
+		return false;
+	}
+	const found = await db.query.user.findFirst({
+		where: eq(user.id, userId),
+		columns: { isInstanceAdmin: true },
+	});
+	return found?.isInstanceAdmin === true;
 };
 
 export const checkEnvironmentAccess = async (

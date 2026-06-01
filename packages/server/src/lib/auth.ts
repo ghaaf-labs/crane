@@ -198,6 +198,14 @@ const { handler, api } = betterAuth({
 						await updateWebServerSettings({
 							serverIp: await getPublicIpWithFallback(),
 						});
+						// Crane: the first self-host user is the instance owner (root).
+						// Flag it so the instance-wide Admin section (host monitoring,
+						// all-org metrics, Web Server / Cluster) is reachable. Cloud has
+						// no single instance owner, so this is self-host only.
+						await db
+							.update(schema.user)
+							.set({ isInstanceAdmin: true })
+							.where(eq(schema.user.id, user.id));
 					}
 
 					if (IS_CLOUD || !isAdminPresent) {
