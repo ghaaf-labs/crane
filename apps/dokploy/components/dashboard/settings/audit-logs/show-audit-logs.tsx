@@ -1,4 +1,7 @@
-import { auditActions, auditResourceTypes } from "@crane/server/db/schema";
+import {
+	auditActions,
+	auditResourceTypes,
+} from "@crane/server/db/schema/audit-log-constants";
 import { format } from "date-fns";
 import {
 	ChevronLeft,

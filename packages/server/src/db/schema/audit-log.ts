@@ -44,64 +44,12 @@ export const auditLogRelations = relations(auditLog, ({ one }) => ({
 export type AuditLog = typeof auditLog.$inferSelect;
 export type NewAuditLog = typeof auditLog.$inferInsert;
 
-/**
- * Single source of truth for audit actions/resource types. The derived union
- * types feed the service/typing layer; the const arrays feed runtime
- * validation (e.g. the tRPC reader's zod enums) so the two can never drift.
- */
-export const auditActions = [
-	"create",
-	"update",
-	"delete",
-	"deploy",
-	"cancel",
-	"redeploy",
-	"login",
-	"logout",
-	"restore",
-	"run",
-	"start",
-	"stop",
-	"reload",
-	"rebuild",
-	"move",
-] as const;
-
-export const auditResourceTypes = [
-	"project",
-	"service",
-	"environment",
-	"deployment",
-	"user",
-	"customRole",
-	"domain",
-	"certificate",
-	"registry",
-	"server",
-	"sshKey",
-	"gitProvider",
-	"destination",
-	"notification",
-	"settings",
-	"session",
-	"port",
-	"redirect",
-	"security",
-	"schedule",
-	"backup",
-	"volumeBackup",
-	"docker",
-	"swarm",
-	"previewDeployment",
-	"organization",
-	"cluster",
-	"mount",
-	"application",
-	"compose",
-	"ai",
-	"tag",
-] as const;
-
-export type AuditAction = (typeof auditActions)[number];
-
-export type AuditResourceType = (typeof auditResourceTypes)[number];
+// The action/resource-type enums live in a dependency-free module so client
+// bundles (the audit-log viewer) can import the runtime arrays without dragging
+// server-only native deps into the browser. Re-exported here for the barrel.
+export {
+	type AuditAction,
+	type AuditResourceType,
+	auditActions,
+	auditResourceTypes,
+} from "./audit-log-constants";
