@@ -40,6 +40,48 @@ export const buildLoadAverageStat = (
 		cores: cores > 0 ? cores : 0,
 	};
 };
+
+export interface SwapStat {
+	swapTotal: number; // MB
+	swapUsed: number; // MB
+	swapFree: number; // MB
+	swapUsedPercentage: number; // 0-100
+}
+
+/**
+ * Pure: parse SwapTotal/SwapFree (kB) out of /proc/meminfo text into MB + a used
+ * percentage. Returns null if the fields are absent/unparsable (e.g. non-Linux
+ * or swap disabled at the kernel level). Inside a container /proc/meminfo still
+ * reflects the host. Tested without touching the filesystem.
+ */
+export const parseSwapFromMeminfo = (meminfo: string): SwapStat | null => {
+	const totalMatch = meminfo.match(/^SwapTotal:\s+(\d+)\s*kB/m);
+	const freeMatch = meminfo.match(/^SwapFree:\s+(\d+)\s*kB/m);
+	if (!totalMatch?.[1] || !freeMatch?.[1]) return null;
+	const totalKb = Number(totalMatch[1]);
+	const freeKb = Number(freeMatch[1]);
+	if (!Number.isFinite(totalKb) || !Number.isFinite(freeKb)) return null;
+	// Clamp free to total so the fields stay self-consistent on any anomaly.
+	const normalizedFreeKb = Math.min(Math.max(0, freeKb), totalKb);
+	const usedKb = totalKb - normalizedFreeKb;
+	const toMb = (kb: number) => Math.round((kb / 1024) * 100) / 100;
+	return {
+		swapTotal: toMb(totalKb),
+		swapUsed: toMb(usedKb),
+		swapFree: toMb(normalizedFreeKb),
+		swapUsedPercentage:
+			totalKb > 0 ? Math.round((usedKb / totalKb) * 10000) / 100 : 0,
+	};
+};
+
+const readSwapStat = async (): Promise<SwapStat | null> => {
+	try {
+		const meminfo = await promises.readFile("/proc/meminfo", "utf-8");
+		return parseSwapFromMeminfo(meminfo);
+	} catch {
+		return null;
+	}
+};
 export const recordAdvancedStats = async (
 	stats: Container,
 	appName: string,
@@ -89,6 +131,11 @@ export const recordAdvancedStats = async (
 			"loadavg",
 			buildLoadAverageStat(os.loadavg(), os.cpus().length),
 		);
+
+		const swap = await readSwapStat();
+		if (swap) {
+			await updateStatsFile(appName, "swap", swap);
+		}
 	}
 };
 
@@ -196,12 +243,20 @@ export const getAdvancedStats = async (appName: string) => {
 		network: await readStatsFile(appName, "network"),
 		block: await readStatsFile(appName, "block"),
 		loadavg: await readStatsFile(appName, "loadavg"),
+		swap: await readStatsFile(appName, "swap"),
 	};
 };
 
 export const readStatsFile = async (
 	appName: string,
-	statType: "cpu" | "memory" | "disk" | "network" | "block" | "loadavg",
+	statType:
+		| "cpu"
+		| "memory"
+		| "disk"
+		| "network"
+		| "block"
+		| "loadavg"
+		| "swap",
 ) => {
 	try {
 		const { MONITORING_PATH } = paths();
@@ -215,7 +270,14 @@ export const readStatsFile = async (
 
 export const updateStatsFile = async (
 	appName: string,
-	statType: "cpu" | "memory" | "disk" | "network" | "block" | "loadavg",
+	statType:
+		| "cpu"
+		| "memory"
+		| "disk"
+		| "network"
+		| "block"
+		| "loadavg"
+		| "swap",
 	value: number | string | unknown,
 ) => {
 	const { MONITORING_PATH } = paths();
@@ -235,7 +297,14 @@ export const updateStatsFile = async (
 
 export const readLastValueStatsFile = async (
 	appName: string,
-	statType: "cpu" | "memory" | "disk" | "network" | "block" | "loadavg",
+	statType:
+		| "cpu"
+		| "memory"
+		| "disk"
+		| "network"
+		| "block"
+		| "loadavg"
+		| "swap",
 ) => {
 	try {
 		const { MONITORING_PATH } = paths();
@@ -256,5 +325,6 @@ export const getLastAdvancedStatsFile = async (appName: string) => {
 		network: await readLastValueStatsFile(appName, "network"),
 		block: await readLastValueStatsFile(appName, "block"),
 		loadavg: await readLastValueStatsFile(appName, "loadavg"),
+		swap: await readLastValueStatsFile(appName, "swap"),
 	};
 };

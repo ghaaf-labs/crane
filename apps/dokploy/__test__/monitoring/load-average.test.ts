@@ -1,4 +1,7 @@
-import { buildLoadAverageStat } from "@crane/server/monitoring/utils";
+import {
+	buildLoadAverageStat,
+	parseSwapFromMeminfo,
+} from "@crane/server/monitoring/utils";
 import { describe, expect, it } from "vitest";
 
 describe("buildLoadAverageStat", () => {
@@ -35,5 +38,45 @@ describe("buildLoadAverageStat", () => {
 	it("clamps a non-positive core count to 0", () => {
 		expect(buildLoadAverageStat([1, 1, 1], 0).cores).toBe(0);
 		expect(buildLoadAverageStat([1, 1, 1], -4).cores).toBe(0);
+	});
+});
+
+describe("parseSwapFromMeminfo", () => {
+	const meminfo = (total: string, free: string) =>
+		`MemTotal:       16384000 kB\nSwapTotal:      ${total} kB\nSwapFree:       ${free} kB\nDirty:                 0 kB\n`;
+
+	it("parses SwapTotal/SwapFree into MB + used percentage", () => {
+		// 2,097,152 kB total = 2048 MB; 1,048,576 kB free = 1024 MB used = 50%
+		const swap = parseSwapFromMeminfo(meminfo("2097152", "1048576"));
+		expect(swap).toEqual({
+			swapTotal: 2048,
+			swapUsed: 1024,
+			swapFree: 1024,
+			swapUsedPercentage: 50,
+		});
+	});
+
+	it("reports 0% when swap is disabled (total 0)", () => {
+		const swap = parseSwapFromMeminfo(meminfo("0", "0"));
+		expect(swap).toEqual({
+			swapTotal: 0,
+			swapUsed: 0,
+			swapFree: 0,
+			swapUsedPercentage: 0,
+		});
+	});
+
+	it("returns null when the swap fields are absent (non-Linux)", () => {
+		expect(parseSwapFromMeminfo("MemTotal: 16384000 kB\n")).toBeNull();
+		expect(parseSwapFromMeminfo("")).toBeNull();
+	});
+
+	it("clamps a free>total anomaly so fields stay self-consistent", () => {
+		const swap = parseSwapFromMeminfo(meminfo("1024", "2048"));
+		expect(swap?.swapUsed).toBe(0);
+		expect(swap?.swapUsedPercentage).toBe(0);
+		// free is clamped to total (1024 kB → 1 MB), not left as the raw 2 MB
+		expect(swap?.swapFree).toBe(1);
+		expect(swap?.swapTotal).toBe(1);
 	});
 });

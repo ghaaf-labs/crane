@@ -9,6 +9,7 @@ import { DockerDiskUsageChart } from "./docker-disk-usage-chart";
 import { DockerLoadChart } from "./docker-load-chart";
 import { DockerMemoryChart } from "./docker-memory-chart";
 import { DockerNetworkChart } from "./docker-network-chart";
+import { DockerSwapChart } from "./docker-swap-chart";
 
 const defaultData = {
 	cpu: {
@@ -42,6 +43,10 @@ const defaultData = {
 	},
 	loadavg: {
 		value: { load1: 0, load5: 0, load15: 0, cores: 0 },
+		time: "",
+	},
+	swap: {
+		value: { swapTotal: 0, swapUsed: 0, swapFree: 0, swapUsedPercentage: 0 },
 		time: "",
 	},
 };
@@ -99,6 +104,16 @@ export interface DockerStats {
 		};
 		time: string;
 	};
+	// Host-only: swap usage (MB) from /proc/meminfo.
+	swap: {
+		value: {
+			swapTotal: number;
+			swapUsed: number;
+			swapFree: number;
+			swapUsedPercentage: number;
+		};
+		time: string;
+	};
 }
 
 export type DockerStatsJSON = {
@@ -108,6 +123,7 @@ export type DockerStatsJSON = {
 	network: DockerStats["network"][];
 	disk: DockerStats["disk"][];
 	loadavg: DockerStats["loadavg"][];
+	swap: DockerStats["swap"][];
 };
 
 export const convertMemoryToBytes = (
@@ -151,6 +167,7 @@ export const ContainerFreeMonitoring = ({
 		network: [],
 		disk: [],
 		loadavg: [],
+		swap: [],
 	});
 	const [currentData, setCurrentData] = useState<DockerStats>(defaultData);
 
@@ -164,6 +181,7 @@ export const ContainerFreeMonitoring = ({
 			network: [],
 			disk: [],
 			loadavg: [],
+			swap: [],
 		});
 	}, [appName]);
 
@@ -177,6 +195,7 @@ export const ContainerFreeMonitoring = ({
 			network: data.network[data.network.length - 1] ?? currentData.network,
 			disk: data.disk[data.disk.length - 1] ?? currentData.disk,
 			loadavg: data.loadavg?.[data.loadavg.length - 1] ?? currentData.loadavg,
+			swap: data.swap?.[data.swap.length - 1] ?? currentData.swap,
 		});
 		setAccumulativeData({
 			block: data?.block || [],
@@ -185,6 +204,7 @@ export const ContainerFreeMonitoring = ({
 			memory: data?.memory || [],
 			network: data?.network || [],
 			loadavg: data?.loadavg || [],
+			swap: data?.swap || [],
 		});
 	}, [data]);
 
@@ -204,6 +224,7 @@ export const ContainerFreeMonitoring = ({
 				disk: value.data.disk ?? currentData.disk,
 				network: value.data.network ?? currentData.network,
 				loadavg: value.data.loadavg ?? currentData.loadavg,
+				swap: value.data.swap ?? currentData.swap,
 			};
 
 			setCurrentData(data);
@@ -216,6 +237,7 @@ export const ContainerFreeMonitoring = ({
 				network: [...prevData.network, data.network].slice(-MAX_DATA_POINTS),
 				disk: [...prevData.disk, data.disk].slice(-MAX_DATA_POINTS),
 				loadavg: [...prevData.loadavg, data.loadavg].slice(-MAX_DATA_POINTS),
+				swap: [...prevData.swap, data.swap].slice(-MAX_DATA_POINTS),
 			}));
 		};
 
@@ -326,6 +348,21 @@ export const ContainerFreeMonitoring = ({
 										: ""}
 								</span>
 								<DockerLoadChart accumulativeData={accumulativeData.loadavg} />
+							</div>
+						</CardContent>
+					</Card>
+				)}
+				{appName === "dokploy" && currentData.swap.value.swapTotal > 0 && (
+					<Card className="bg-background">
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="text-sm font-medium">Swap</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<div className="flex flex-col gap-2 w-full">
+								<span className="text-sm text-muted-foreground">
+									{`Used: ${currentData.swap.value.swapUsed} MB / ${currentData.swap.value.swapTotal} MB (${currentData.swap.value.swapUsedPercentage}%)`}
+								</span>
+								<DockerSwapChart accumulativeData={accumulativeData.swap} />
 							</div>
 						</CardContent>
 					</Card>
