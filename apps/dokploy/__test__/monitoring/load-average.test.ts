@@ -33,11 +33,26 @@ describe("parseDfRootUsage", () => {
 		});
 	});
 
+	it("handles a wrapped filesystem-name row (name on its own line)", () => {
+		// `df` wraps a long device name; the numeric columns start the next line.
+		const out =
+			"Filesystem 1024-blocks Used Available Capacity Mounted on\n" +
+			"/dev/mapper/a-very-long-volume-group-name-lv_root\n" +
+			"                  2097152 1048576   1048576      50% /";
+		expect(parseDfRootUsage(out)).toEqual({
+			diskTotal: 2,
+			diskUsage: 1,
+			diskFree: 1,
+			diskUsedPercentage: 50,
+		});
+	});
+
 	it("returns null for header-only or malformed output", () => {
 		expect(parseDfRootUsage("Filesystem 1K-blocks Used Available")).toBeNull();
 		expect(parseDfRootUsage("")).toBeNull();
+		// No capacity (NN%) field to anchor on.
 		expect(
-			parseDfRootUsage("Filesystem 1K-blocks\n/dev/sda1 notanumber x y"),
+			parseDfRootUsage("Filesystem 1K-blocks\n/dev/sda1 100 200 300 /"),
 		).toBeNull();
 	});
 });

@@ -142,20 +142,24 @@ export interface DiskStat {
 }
 
 /**
- * Pure: parse the root-filesystem usage out of `df -k /` output (1K blocks) into
- * GB + a used percentage. Works for both Linux and macOS `df` layouts (the first
- * three numeric columns after the device are always blocks/used/available).
- * Returns null if the data row is missing or unparsable. Tested without running df.
+ * Pure: parse the root-filesystem usage out of `df -Pk /` output (1K blocks) into
+ * GB + a used percentage. Robust across Linux and macOS: rather than assuming
+ * fixed column positions (a long filesystem/device name can wrap onto its own
+ * line and shift them), it collapses all post-header tokens, anchors on the
+ * `NN%` capacity field, and reads the three numeric columns before it as
+ * total/used/available. Returns null if the data is missing or unparsable.
+ * Tested without running df.
  */
 export const parseDfRootUsage = (dfOutput: string): DiskStat | null => {
 	const lines = dfOutput.trim().split("\n");
 	if (lines.length < 2) return null;
-	const dataLine = lines[lines.length - 1]?.trim();
-	if (!dataLine) return null;
-	const cols = dataLine.split(/\s+/);
-	const totalKb = Number(cols[1]);
-	const usedKb = Number(cols[2]);
-	const availKb = Number(cols[3]);
+	// Join everything after the header so a wrapped filesystem-name row is handled.
+	const tokens = lines.slice(1).join(" ").trim().split(/\s+/);
+	const capacityIdx = tokens.findIndex((t) => /^\d+%$/.test(t));
+	if (capacityIdx < 3) return null;
+	const totalKb = Number(tokens[capacityIdx - 3]);
+	const usedKb = Number(tokens[capacityIdx - 2]);
+	const availKb = Number(tokens[capacityIdx - 1]);
 	if (
 		!Number.isFinite(totalKb) ||
 		!Number.isFinite(usedKb) ||
@@ -196,7 +200,8 @@ export const getRootDiskUsage = async (): Promise<DiskStat | null> => {
 		// fall through to df
 	}
 	try {
-		const { stdout } = await execAsync("df -k /");
+		// -P forces POSIX one-line-per-filesystem output (no wrapped rows); -k = 1K blocks.
+		const { stdout } = await execAsync("df -Pk /");
 		return parseDfRootUsage(stdout);
 	} catch {
 		return null;
