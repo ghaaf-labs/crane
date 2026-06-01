@@ -34,11 +34,15 @@ export type MonitoringServiceType =
 /** The `appType` the docker-stats stream expects for a given service kind. */
 export type MonitoringAppType = "application" | "stack" | "docker-compose";
 
+/** Deploy status shared by every service table (compose stores it as composeStatus). */
+export type ServiceStatus = "idle" | "running" | "done" | "error";
+
 export interface OrgServiceTarget {
 	appName: string;
 	appType: MonitoringAppType;
 	name: string;
 	type: MonitoringServiceType;
+	status: ServiceStatus;
 	projectId: string;
 	projectName: string;
 	environmentId: string;
@@ -153,17 +157,30 @@ const SERVICE_LISTING_WITH = {
 		columns: { projectId: true, name: true, organizationId: true },
 		with: { organization: { columns: { name: true } } },
 	},
-	applications: { columns: { appName: true, name: true } },
-	compose: { columns: { appName: true, name: true, composeType: true } },
-	libsql: { columns: { appName: true, name: true } },
-	mariadb: { columns: { appName: true, name: true } },
-	mongo: { columns: { appName: true, name: true } },
-	mysql: { columns: { appName: true, name: true } },
-	postgres: { columns: { appName: true, name: true } },
-	redis: { columns: { appName: true, name: true } },
+	applications: {
+		columns: { appName: true, name: true, applicationStatus: true },
+	},
+	compose: {
+		columns: {
+			appName: true,
+			name: true,
+			composeType: true,
+			composeStatus: true,
+		},
+	},
+	libsql: { columns: { appName: true, name: true, applicationStatus: true } },
+	mariadb: { columns: { appName: true, name: true, applicationStatus: true } },
+	mongo: { columns: { appName: true, name: true, applicationStatus: true } },
+	mysql: { columns: { appName: true, name: true, applicationStatus: true } },
+	postgres: { columns: { appName: true, name: true, applicationStatus: true } },
+	redis: { columns: { appName: true, name: true, applicationStatus: true } },
 } as const;
 
-type ServiceRow = { appName: string; name: string };
+type ServiceRow = {
+	appName: string;
+	name: string;
+	applicationStatus: ServiceStatus;
+};
 
 // Maps one environment's services (applications, compose, databases) into the
 // flat monitoring-target shape. Returns [] if the environment's project/org is
@@ -178,7 +195,10 @@ const mapEnvironmentServices = (env: {
 		organization: { name: string } | null;
 	} | null;
 	applications: ServiceRow[];
-	compose: (ServiceRow & { composeType: string | null })[];
+	compose: (Omit<ServiceRow, "applicationStatus"> & {
+		composeType: string | null;
+		composeStatus: ServiceStatus;
+	})[];
 	libsql: ServiceRow[];
 	mariadb: ServiceRow[];
 	mongo: ServiceRow[];
@@ -205,6 +225,7 @@ const mapEnvironmentServices = (env: {
 			appType: "application",
 			name: a.name,
 			type: "application",
+			status: a.applicationStatus,
 		});
 	}
 	for (const c of env.compose) {
@@ -214,6 +235,7 @@ const mapEnvironmentServices = (env: {
 			appType: composeAppType(c.composeType),
 			name: c.name,
 			type: "compose",
+			status: c.composeStatus,
 		});
 	}
 	const databases: [MonitoringServiceType, ServiceRow[]][] = [
@@ -233,6 +255,7 @@ const mapEnvironmentServices = (env: {
 				appType: "application",
 				name: row.name,
 				type,
+				status: row.applicationStatus,
 			});
 		}
 	}

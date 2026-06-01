@@ -187,7 +187,7 @@ describe("listOrgServices", () => {
 			organizationId,
 			organization: { name: `Org ${organizationId}` },
 		},
-		applications: [{ appName, name: appName }],
+		applications: [{ appName, name: appName, applicationStatus: "running" }],
 		compose: [],
 		libsql: [],
 		mariadb: [],
@@ -197,12 +197,13 @@ describe("listOrgServices", () => {
 		redis: [],
 	});
 
-	it("returns only the active org's services, never another org's", async () => {
+	it("returns only the active org's services with status, never another org's", async () => {
 		listEnvs = [envRow("org-A", "app-a"), envRow("org-B", "app-b")];
 		const services = await listOrgServices("org-A");
 		expect(services).toHaveLength(1);
 		expect(services[0]?.appName).toBe("app-a");
 		expect(services[0]?.organizationId).toBe("org-A");
+		expect(services[0]?.status).toBe("running");
 	});
 
 	it("returns an empty list for an org with no services", async () => {

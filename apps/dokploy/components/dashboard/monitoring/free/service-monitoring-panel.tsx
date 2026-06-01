@@ -10,6 +10,14 @@ export type MonitoredService = {
 	name: string;
 	projectName: string;
 	organizationName?: string;
+	status?: "idle" | "running" | "done" | "error";
+};
+
+const statusDotClass: Record<string, string> = {
+	running: "bg-amber-500",
+	done: "bg-emerald-500",
+	error: "bg-red-500",
+	idle: "bg-muted-foreground/40",
 };
 
 /**
@@ -68,6 +76,15 @@ export const ServiceMonitoringPanel = ({
 							className={cn("h-auto py-1.5", isActive && "border-primary")}
 							onClick={() => setSelected(service.appName)}
 						>
+							{service.status && (
+								<span
+									className={cn(
+										"size-2 rounded-full shrink-0",
+										statusDotClass[service.status] ?? statusDotClass.idle,
+									)}
+									aria-label={service.status}
+								/>
+							)}
 							<span className="flex flex-col items-start text-left leading-tight">
 								<span className="font-medium">{service.name}</span>
 								<span className="text-xs text-muted-foreground">
