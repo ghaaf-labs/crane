@@ -18,7 +18,6 @@ import {
 	getWebServerSettings,
 	updateWebServerSettings,
 } from "../services/web-server-settings";
-import { getHubSpotUTK, submitToHubSpot } from "../utils/tracking/hubspot";
 import {
 	sendEmail,
 	sendVerificationEmail,
@@ -190,7 +189,7 @@ const { handler, api } = betterAuth({
 						}
 					}
 				},
-				after: async (user, context) => {
+				after: async (user) => {
 					const isAdminPresent = await db.query.member.findFirst({
 						where: eq(schema.member.role, "owner"),
 					});
@@ -199,31 +198,6 @@ const { handler, api } = betterAuth({
 						await updateWebServerSettings({
 							serverIp: await getPublicIpWithFallback(),
 						});
-					}
-
-					if (IS_CLOUD) {
-						try {
-							const hutk = getHubSpotUTK(
-								context?.request?.headers?.get("cookie") || undefined,
-							);
-							// Cast to include additional fields
-							const userWithFields = user as typeof user & {
-								lastName?: string;
-							};
-							const hubspotSuccess = await submitToHubSpot(
-								{
-									email: user.email,
-									firstName: user.name || "", // name is mapped to firstName column
-									lastName: userWithFields.lastName || "",
-								},
-								hutk,
-							);
-							if (!hubspotSuccess) {
-								console.error("Failed to submit to HubSpot");
-							}
-						} catch (error) {
-							console.error("Error submitting to HubSpot", error);
-						}
 					}
 
 					if (IS_CLOUD || !isAdminPresent) {
