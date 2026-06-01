@@ -374,7 +374,7 @@ export const HandleRegistry = ({ registryId }: Props) => {
 													) : (
 														<>
 															Choose where to authenticate with the registry. By
-															default, authentication occurs on the Dokploy
+															default, authentication occurs on the Crane
 															server. Select a specific server to authenticate
 															from that server instead.
 														</>

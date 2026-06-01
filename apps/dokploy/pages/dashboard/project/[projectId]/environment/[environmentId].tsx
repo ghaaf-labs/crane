@@ -1578,7 +1578,7 @@ const EnvironmentPage = (
 														<SelectItem value="dokploy-server">
 															<div className="flex items-center gap-2">
 																<ServerIcon className="size-4" />
-																<span>Dokploy server</span>
+																<span>Crane server</span>
 															</div>
 														</SelectItem>
 													)}
