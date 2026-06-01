@@ -105,6 +105,10 @@ const createSchema = createInsertSchema(user, {
 	trustedOrigins: true,
 	bookmarkedTemplates: true,
 	isEnterpriseCloud: true,
+	// Crane: privilege-sensitive, server-controlled only. Must never be settable
+	// through client-derived schemas (e.g. apiUpdateUser → profile update), or any
+	// authenticated user could grant themselves the instance-owner (root) role.
+	isInstanceAdmin: true,
 });
 
 export const apiCreateUserInvitation = createSchema.pick({}).extend({

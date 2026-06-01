@@ -522,10 +522,15 @@ export const updateUser = async (userId: string, userData: Partial<User>) => {
 		}
 	}
 
+	// Crane: never let the privilege-sensitive instance-owner flag be mass-assigned
+	// through this generic update path — it is server-controlled (migration backfill
+	// + first-user hook only). Defense-in-depth alongside omitting it from the input
+	// schemas; protects any non-tRPC caller too.
+	const { isInstanceAdmin: _protectedFlag, ...safeUserData } = userData;
 	const userResult = await db
 		.update(user)
 		.set({
-			...userData,
+			...safeUserData,
 		})
 		.where(eq(user.id, userId))
 		.returning()
