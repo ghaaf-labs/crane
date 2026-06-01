@@ -2,6 +2,7 @@ import { promises } from "node:fs";
 import os from "node:os";
 import { OSUtils } from "node-os-utils";
 import { paths } from "../constants";
+import { execAsync } from "../utils/process/execAsync";
 
 export interface Container {
 	BlockIO: string;
@@ -133,6 +134,75 @@ export const getHostSystemInfo = (): HostSystemInfo => {
 	};
 };
 
+export interface DiskStat {
+	diskTotal: number; // GB
+	diskUsage: number; // GB used
+	diskFree: number; // GB available
+	diskUsedPercentage: number; // 0-100
+}
+
+/**
+ * Pure: parse the root-filesystem usage out of `df -k /` output (1K blocks) into
+ * GB + a used percentage. Works for both Linux and macOS `df` layouts (the first
+ * three numeric columns after the device are always blocks/used/available).
+ * Returns null if the data row is missing or unparsable. Tested without running df.
+ */
+export const parseDfRootUsage = (dfOutput: string): DiskStat | null => {
+	const lines = dfOutput.trim().split("\n");
+	if (lines.length < 2) return null;
+	const dataLine = lines[lines.length - 1]?.trim();
+	if (!dataLine) return null;
+	const cols = dataLine.split(/\s+/);
+	const totalKb = Number(cols[1]);
+	const usedKb = Number(cols[2]);
+	const availKb = Number(cols[3]);
+	if (
+		!Number.isFinite(totalKb) ||
+		!Number.isFinite(usedKb) ||
+		!Number.isFinite(availKb) ||
+		totalKb <= 0
+	) {
+		return null;
+	}
+	const toGb = (kb: number) => Math.round((kb / 1024 / 1024) * 100) / 100;
+	return {
+		diskTotal: toGb(totalKb),
+		diskUsage: toGb(usedKb),
+		diskFree: toGb(availKb),
+		diskUsedPercentage: Math.round((usedKb / totalKb) * 1000) / 10,
+	};
+};
+
+/**
+ * Root-filesystem usage for the host monitoring "Disk Space" card. Prefers
+ * node-os-utils, but falls back to parsing `df -k /` when it reports nothing —
+ * node-os-utils returns zeroes on macOS (and can on some container filesystems),
+ * which previously left the card stuck at "0 GB / 0 GB".
+ */
+export const getRootDiskUsage = async (): Promise<DiskStat | null> => {
+	try {
+		const osutils = new OSUtils();
+		const result = await osutils.disk.usageByMountPoint("/");
+		if (result.success && result.data && result.data.total.toGB() > 0) {
+			const disk = result.data;
+			return {
+				diskTotal: Math.round(disk.total.toGB() * 100) / 100,
+				diskUsage: Math.round(disk.used.toGB() * 100) / 100,
+				diskFree: Math.round(disk.available.toGB() * 100) / 100,
+				diskUsedPercentage: disk.usagePercentage,
+			};
+		}
+	} catch {
+		// fall through to df
+	}
+	try {
+		const { stdout } = await execAsync("df -k /");
+		return parseDfRootUsage(stdout);
+	} catch {
+		return null;
+	}
+};
+
 export interface SwapStat {
 	swapTotal: number; // MB
 	swapUsed: number; // MB
@@ -200,22 +270,9 @@ export const recordAdvancedStats = async (
 	});
 
 	if (appName === "dokploy") {
-		const osutils = new OSUtils();
-		const diskResult = await osutils.disk.usageByMountPoint("/");
-
-		if (diskResult.success && diskResult.data) {
-			const disk = diskResult.data;
-			const diskUsage = disk.used.toGB().toFixed(2);
-			const diskTotal = disk.total.toGB().toFixed(2);
-			const diskUsedPercentage = disk.usagePercentage;
-			const diskFree = disk.available.toGB().toFixed(2);
-
-			await updateStatsFile(appName, "disk", {
-				diskTotal: +diskTotal,
-				diskUsedPercentage: +diskUsedPercentage,
-				diskUsage: +diskUsage,
-				diskFree: +diskFree,
-			});
+		const disk = await getRootDiskUsage();
+		if (disk) {
+			await updateStatsFile(appName, "disk", disk);
 		}
 
 		await updateStatsFile(

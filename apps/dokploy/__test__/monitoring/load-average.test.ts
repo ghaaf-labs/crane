@@ -2,9 +2,45 @@ import {
 	buildLoadAverageStat,
 	computePerCoreUsage,
 	getHostSystemInfo,
+	parseDfRootUsage,
 	parseSwapFromMeminfo,
 } from "@crane/server/monitoring/utils";
 import { describe, expect, it } from "vitest";
+
+describe("parseDfRootUsage", () => {
+	// 2097152 KB = 2 GB; 1048576 KB = 1 GB.
+	it("parses a Linux `df -k /` data row", () => {
+		const out =
+			"Filesystem     1K-blocks      Used Available Use% Mounted on\n" +
+			"/dev/sda1        2097152   1048576   1048576  50% /";
+		expect(parseDfRootUsage(out)).toEqual({
+			diskTotal: 2,
+			diskUsage: 1,
+			diskFree: 1,
+			diskUsedPercentage: 50,
+		});
+	});
+
+	it("parses a macOS `df -k /` row with its extra inode columns", () => {
+		const out =
+			"Filesystem    1024-blocks      Used Available Capacity iused ifree %iused  Mounted on\n" +
+			"/dev/disk3s1s1    2097152   1048576   1048576    50%   100   200   50%   /";
+		expect(parseDfRootUsage(out)).toEqual({
+			diskTotal: 2,
+			diskUsage: 1,
+			diskFree: 1,
+			diskUsedPercentage: 50,
+		});
+	});
+
+	it("returns null for header-only or malformed output", () => {
+		expect(parseDfRootUsage("Filesystem 1K-blocks Used Available")).toBeNull();
+		expect(parseDfRootUsage("")).toBeNull();
+		expect(
+			parseDfRootUsage("Filesystem 1K-blocks\n/dev/sda1 notanumber x y"),
+		).toBeNull();
+	});
+});
 
 const t = (user: number, idle: number) => ({
 	user,
