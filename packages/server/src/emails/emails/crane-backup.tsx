@@ -17,7 +17,7 @@ export type TemplateProps = {
 	backupSize?: string;
 };
 
-export const DokployBackupEmail = ({
+export const CraneBackupEmail = ({
 	type = "success",
 	errorMessage,
 	date = "2023-05-01T00:00:00.000Z",
@@ -96,4 +96,4 @@ export const DokployBackupEmail = ({
 	);
 };
 
-export default DokployBackupEmail;
+export default CraneBackupEmail;

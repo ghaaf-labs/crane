@@ -14,7 +14,7 @@ export type TemplateProps = {
 	date: string;
 };
 
-export const DokployRestartEmail = ({
+export const CraneRestartEmail = ({
 	date = "2023-05-01T00:00:00.000Z",
 }: TemplateProps) => {
 	const previewText = "Your Crane server was restarted";
@@ -64,4 +64,4 @@ export const DokployRestartEmail = ({
 	);
 };
 
-export default DokployRestartEmail;
+export default CraneRestartEmail;

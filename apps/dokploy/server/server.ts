@@ -9,7 +9,7 @@ import {
 	initializeNetwork,
 	initSchedules,
 	initVolumeBackupsCronJobs,
-	sendDokployRestartNotifications,
+	sendCraneRestartNotifications,
 	setupDirectories,
 } from "@crane/server";
 import { config } from "dotenv";
@@ -64,7 +64,7 @@ void app.prepare().then(async () => {
 			await initSchedules();
 			await initCancelDeployments();
 			await initVolumeBackupsCronJobs();
-			await sendDokployRestartNotifications();
+			await sendCraneRestartNotifications();
 		}
 
 		if (!IS_CLOUD) {

@@ -9,7 +9,7 @@ import {
 	updateDeploymentStatus,
 } from "@crane/server/services/deployment";
 import { findDestinationById } from "@crane/server/services/destination";
-import { sendDokployBackupNotifications } from "../notifications/dokploy-backup";
+import { sendCraneBackupNotifications } from "../notifications/crane-backup";
 import { execAsync } from "../process/execAsync";
 import { getBackupTimestamp, getS3Credentials, normalizeS3Path } from "./utils";
 
@@ -103,7 +103,7 @@ export const runWebServerBackup = async (backup: BackupSchedule) => {
 			await execAsync(uploadCommand);
 			writeStream.write("Uploaded backup to S3 ✅\n");
 			writeStream.end();
-			await sendDokployBackupNotifications({
+			await sendCraneBackupNotifications({
 				type: "success",
 				backupSize: formatBytes(computedBackupSize),
 			});
@@ -123,7 +123,7 @@ export const runWebServerBackup = async (backup: BackupSchedule) => {
 			error instanceof Error ? error.message : "Unknown error\n",
 		);
 		writeStream.end();
-		await sendDokployBackupNotifications({
+		await sendCraneBackupNotifications({
 			type: "error",
 			// @ts-ignore
 			errorMessage: error?.message || "Error message not provided",
