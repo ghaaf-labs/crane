@@ -173,9 +173,9 @@ export const EditGitlabProvider = ({ gitlabId }: Props) => {
 												/>
 											</FormControl>
 											<FormDescription>
-												Use when GitLab runs on the same instance as Dokploy.
-												Used for OAuth token exchange to reach GitLab via
-												internal network (e.g. Docker service name).
+												Use when GitLab runs on the same instance as Crane. Used
+												for OAuth token exchange to reach GitLab via internal
+												network (e.g. Docker service name).
 											</FormDescription>
 											<FormMessage />
 										</FormItem>
