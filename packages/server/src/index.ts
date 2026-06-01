@@ -28,6 +28,7 @@ export * from "./services/gitlab";
 export * from "./services/libsql";
 export * from "./services/mariadb";
 export * from "./services/mongo";
+export * from "./services/monitoring";
 export * from "./services/mount";
 export * from "./services/mysql";
 export * from "./services/notification";

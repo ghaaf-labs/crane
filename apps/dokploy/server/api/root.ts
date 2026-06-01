@@ -20,6 +20,7 @@ import { gitlabRouter } from "./routers/gitlab";
 import { libsqlRouter } from "./routers/libsql";
 import { mariadbRouter } from "./routers/mariadb";
 import { mongoRouter } from "./routers/mongo";
+import { monitoringRouter } from "./routers/monitoring";
 import { mountRouter } from "./routers/mount";
 import { mysqlRouter } from "./routers/mysql";
 import { notificationRouter } from "./routers/notification";
@@ -69,6 +70,7 @@ export const appRouter = createTRPCRouter({
 	libsql: libsqlRouter,
 	mariadb: mariadbRouter,
 	mongo: mongoRouter,
+	monitoring: monitoringRouter,
 	mounts: mountRouter,
 	mysql: mysqlRouter,
 	notification: notificationRouter,

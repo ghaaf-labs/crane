@@ -1,5 +1,6 @@
 import type http from "node:http";
 import {
+	canAccessAppMonitoring,
 	docker,
 	execAsync,
 	getHostSystemStats,
@@ -55,6 +56,22 @@ export const setupDockerStatsMonitoringSocketServer = (
 			ws.close();
 			return;
 		}
+
+		// Crane tenant isolation: a caller may only stream stats for an appName its
+		// active organization owns; host metrics (the "dokploy" sentinel) are
+		// instance-owner-only. Without this, any authenticated user could stream any
+		// organization's container stats by passing an arbitrary appName.
+		const allowed = await canAccessAppMonitoring({
+			userId: user.id,
+			organizationId: (session as { activeOrganizationId?: string })
+				.activeOrganizationId,
+			appName,
+		});
+		if (!allowed) {
+			ws.close(4003, "forbidden");
+			return;
+		}
+
 		const intervalId = setInterval(async () => {
 			try {
 				// Special case: when monitoring "dokploy", get host system stats instead of container stats

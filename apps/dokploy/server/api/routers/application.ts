@@ -1,4 +1,5 @@
 import {
+	canAccessAppMonitoring,
 	clearOldDeployments,
 	createApplication,
 	deleteAllMiddlewares,
@@ -879,11 +880,24 @@ export const applicationRouter = createTRPCRouter({
 		}),
 	readAppMonitoring: withPermission("monitoring", "read")
 		.input(apiFindMonitoringStats)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			if (IS_CLOUD) {
 				throw new TRPCError({
 					code: "UNAUTHORIZED",
 					message: "Functionality not available in cloud version",
+				});
+			}
+			// Crane tenant isolation: only the app's owning org (or the instance
+			// owner) may read its monitoring; host metrics are instance-owner-only.
+			const allowed = await canAccessAppMonitoring({
+				userId: ctx.user.id,
+				organizationId: ctx.session.activeOrganizationId,
+				appName: input.appName,
+			});
+			if (!allowed) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "You do not have access to this resource's monitoring.",
 				});
 			}
 			const stats = await getApplicationStats(input.appName);

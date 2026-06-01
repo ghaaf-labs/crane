@@ -12,6 +12,7 @@ import {
 	IS_CLOUD,
 	removeUserById,
 	renderInvitationEmail,
+	canAccessAppMonitoring as resolveCanAccessAppMonitoring,
 	isInstanceAdmin as resolveIsInstanceAdmin,
 	sendEmailNotification,
 	sendResendNotification,
@@ -39,6 +40,7 @@ import { and, asc, eq, gt, ne } from "drizzle-orm";
 import { z } from "zod";
 import { audit } from "@/server/api/utils/audit";
 import {
+	adminInstanceProcedure,
 	adminProcedure,
 	createTRPCRouter,
 	protectedProcedure,
@@ -271,20 +273,19 @@ export const userRouter = createTRPCRouter({
 		.query(async ({ input }) => {
 			return await getUserByToken(input.token);
 		}),
-	getMetricsToken: withPermission("monitoring", "read").query(
-		async ({ ctx }) => {
-			const user = await findUserById(ctx.user.ownerId);
-			const settings = await getWebServerSettings();
-			return {
-				serverIp: settings?.serverIp,
-				enabledFeatures: user.enablePaidFeatures,
-				metricsConfig: settings?.metricsConfig,
-			};
-		},
-	),
-	getHostSystemInfo: withPermission("monitoring", "read").query(() =>
-		getHostSystemInfo(),
-	),
+	// Crane: host-level metrics config + the host system info are instance-wide,
+	// so they are reachable only by the instance owner (Admin section), never from
+	// an organization's monitoring view.
+	getMetricsToken: adminInstanceProcedure.query(async ({ ctx }) => {
+		const user = await findUserById(ctx.user.ownerId);
+		const settings = await getWebServerSettings();
+		return {
+			serverIp: settings?.serverIp,
+			enabledFeatures: user.enablePaidFeatures,
+			metricsConfig: settings?.metricsConfig,
+		};
+	}),
+	getHostSystemInfo: adminInstanceProcedure.query(() => getHostSystemInfo()),
 	remove: protectedProcedure
 		.input(
 			z.object({
@@ -419,7 +420,7 @@ export const userRouter = createTRPCRouter({
 				dataPoints: z.string(),
 			}),
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			try {
 				if (!input.appName) {
 					throw new Error(
@@ -429,6 +430,19 @@ export const userRouter = createTRPCRouter({
 							"Make Sure to select an application to monitor.",
 						].join("\n"),
 					);
+				}
+				// Crane tenant isolation: only the app's owning org (or the instance
+				// owner) may read its container metrics.
+				const allowed = await resolveCanAccessAppMonitoring({
+					userId: ctx.user.id,
+					organizationId: ctx.session.activeOrganizationId,
+					appName: input.appName,
+				});
+				if (!allowed) {
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message: "You do not have access to this resource's monitoring.",
+					});
 				}
 				const url = new URL(`${input.url}/metrics/containers`);
 				url.searchParams.append("limit", input.dataPoints);

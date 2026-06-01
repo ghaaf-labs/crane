@@ -373,6 +373,13 @@ const MENU: Menu = {
 	admin: [
 		{
 			isSingle: true,
+			title: "Monitoring",
+			url: "/dashboard/admin/monitoring",
+			icon: BarChartHorizontalBigIcon,
+			isEnabled: ({ isInstanceAdmin }) => isInstanceAdmin,
+		},
+		{
+			isSingle: true,
 			title: "Web Server",
 			url: "/dashboard/admin/web-server",
 			icon: Activity,
