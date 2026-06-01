@@ -20,9 +20,9 @@ async function generateOpenAPI() {
 		console.log("🔄 Generating OpenAPI specification...");
 
 		const openApiDocument = generateOpenApiDocument(appRouter, {
-			title: "Dokploy API",
+			title: "Crane API",
 			version: "1.0.0",
-			baseUrl: "https://your-dokploy-instance.com/api",
+			baseUrl: "https://your-crane-instance.com/api",
 			docsUrl: "https://github.com/ghaaf-labs/crane",
 			tags: [
 				"admin",
@@ -67,12 +67,12 @@ async function generateOpenAPI() {
 
 		// Enhance metadata
 		openApiDocument.info = {
-			title: "Dokploy API",
+			title: "Crane API",
 			description:
-				"Complete API documentation for Dokploy - Deploy applications, manage databases, and orchestrate your infrastructure. This API allows you to programmatically manage all aspects of your Dokploy instance.",
+				"Complete API documentation for Crane - Deploy applications, manage databases, and orchestrate your infrastructure. This API allows you to programmatically manage all aspects of your Crane instance.",
 			version: "1.0.0",
 			contact: {
-				name: "Dokploy Team",
+				name: "Crane",
 				url: "https://github.com/ghaaf-labs/crane",
 			},
 			license: {
@@ -90,7 +90,7 @@ async function generateOpenAPI() {
 					in: "header",
 					name: "x-api-key",
 					description:
-						"API key authentication. Generate an API key from your Dokploy dashboard under Settings > API Keys.",
+						"API key authentication. Generate an API key from your Crane dashboard under Settings > API Keys.",
 				},
 			},
 		};

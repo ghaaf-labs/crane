@@ -675,8 +675,8 @@ export const settingsRouter = createTRPCRouter({
 			});
 
 			openApiDocument.info = {
-				title: "Dokploy API",
-				description: "Endpoints for dokploy",
+				title: "Crane API",
+				description: "Crane API endpoints",
 				version: packageInfo.version,
 			};
 
