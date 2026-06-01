@@ -97,6 +97,8 @@ type EnabledOpts = {
 	auth?: AuthQueryOutput;
 	permissions?: PermissionsOutput;
 	isCloud: boolean;
+	// Crane: the caller is the single instance owner (root). Gates the Admin group.
+	isInstanceAdmin: boolean;
 };
 
 type SingleNavItem = {
@@ -126,6 +128,8 @@ type NavItem =
 type Menu = {
 	home: NavItem[];
 	settings: NavItem[];
+	// Crane: instance-wide section, visible only to the instance owner (root).
+	admin: NavItem[];
 };
 
 // Menu items
@@ -268,15 +272,6 @@ const MENU: Menu = {
 	settings: [
 		{
 			isSingle: true,
-			title: "Web Server",
-			url: "/dashboard/settings/server",
-			icon: Activity,
-			// Only enabled for admins in non-cloud environments
-			isEnabled: ({ permissions, isCloud }) =>
-				!!(permissions?.organization.update && !isCloud),
-		},
-		{
-			isSingle: true,
 			title: "Profile",
 			url: "/dashboard/settings/profile",
 			icon: User,
@@ -358,15 +353,6 @@ const MENU: Menu = {
 		},
 		{
 			isSingle: true,
-			title: "Cluster",
-			url: "/dashboard/settings/cluster",
-			icon: Boxes,
-			// Only enabled for admins in non-cloud environments
-			isEnabled: ({ permissions, isCloud }) =>
-				!!(permissions?.organization.update && !isCloud),
-		},
-		{
-			isSingle: true,
 			title: "Notifications",
 			url: "/dashboard/settings/notifications",
 			icon: Bell,
@@ -382,6 +368,24 @@ const MENU: Menu = {
 			isEnabled: ({ auth, isCloud }) => !!(auth?.role === "owner" && isCloud),
 		},
 	],
+	// Crane: instance-wide infrastructure, gated to the instance owner (root).
+	// `isInstanceAdmin` already resolves false on cloud, so no extra isCloud guard.
+	admin: [
+		{
+			isSingle: true,
+			title: "Web Server",
+			url: "/dashboard/admin/web-server",
+			icon: Activity,
+			isEnabled: ({ isInstanceAdmin }) => isInstanceAdmin,
+		},
+		{
+			isSingle: true,
+			title: "Cluster",
+			url: "/dashboard/admin/cluster",
+			icon: Boxes,
+			isEnabled: ({ isInstanceAdmin }) => isInstanceAdmin,
+		},
+	],
 } as const;
 
 /**
@@ -392,6 +396,7 @@ function createMenuForAuthUser(opts: {
 	auth?: AuthQueryOutput;
 	permissions?: PermissionsOutput;
 	isCloud: boolean;
+	isInstanceAdmin: boolean;
 }): Menu {
 	const filterEnabled = <
 		T extends {
@@ -407,12 +412,14 @@ function createMenuForAuthUser(opts: {
 						auth: opts.auth,
 						permissions: opts.permissions,
 						isCloud: opts.isCloud,
+						isInstanceAdmin: opts.isInstanceAdmin,
 					}),
 		) as T[];
 
 	return {
 		home: filterEnabled(MENU.home),
 		settings: filterEnabled(MENU.settings),
+		admin: filterEnabled(MENU.admin),
 	};
 }
 
@@ -467,6 +474,116 @@ function findActiveNavItem(
 	// The found item is not single, so find the active sub item
 	return found?.items.find((item) =>
 		isActiveRoute({ itemUrl: item.url, pathname }),
+	);
+}
+
+/**
+ * Renders one sidebar section (Home / Settings / Admin). Extracted so the three
+ * groups share identical markup. Renders nothing when the group has no visible
+ * items, so e.g. non-instance-admins never see an empty "Admin" header.
+ */
+function NavGroup({
+	label,
+	items,
+	pathname,
+	menuClassName,
+}: {
+	label: string;
+	items: NavItem[];
+	pathname: string;
+	menuClassName?: string;
+}) {
+	if (items.length === 0) {
+		return null;
+	}
+	return (
+		<SidebarGroup>
+			<SidebarGroupLabel>{label}</SidebarGroupLabel>
+			<SidebarMenu className={menuClassName}>
+				{items.map((item) => {
+					const isSingle = item.isSingle !== false;
+					const isActive = isSingle
+						? isActiveRoute({ itemUrl: item.url, pathname })
+						: item.items.some((subItem) =>
+								isActiveRoute({ itemUrl: subItem.url, pathname }),
+							);
+
+					return (
+						<Collapsible
+							key={item.title}
+							asChild
+							defaultOpen={isActive}
+							className="group/collapsible"
+						>
+							<SidebarMenuItem>
+								{isSingle ? (
+									<SidebarMenuButton
+										asChild
+										tooltip={item.title}
+										className={cn(isActive && "bg-border")}
+									>
+										<Link
+											href={item.url}
+											className="flex w-full items-center gap-2"
+										>
+											{item.icon && (
+												<item.icon className={cn(isActive && "text-primary")} />
+											)}
+											<span>{item.title}</span>
+										</Link>
+									</SidebarMenuButton>
+								) : (
+									<>
+										<CollapsibleTrigger asChild>
+											<SidebarMenuButton
+												tooltip={item.title}
+												isActive={isActive}
+											>
+												{item.icon && <item.icon />}
+
+												<span>{item.title}</span>
+												{item.items?.length && (
+													<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+												)}
+											</SidebarMenuButton>
+										</CollapsibleTrigger>
+										<CollapsibleContent>
+											<SidebarMenuSub>
+												{item.items?.map((subItem) => (
+													<SidebarMenuSubItem key={subItem.title}>
+														<SidebarMenuSubButton
+															asChild
+															className={cn(isActive && "bg-border")}
+														>
+															<Link
+																href={subItem.url}
+																className="flex w-full items-center"
+															>
+																{subItem.icon && (
+																	<span className="mr-2">
+																		<subItem.icon
+																			className={cn(
+																				"h-4 w-4 text-muted-foreground",
+																				isActive && "text-primary",
+																			)}
+																		/>
+																	</span>
+																)}
+																<span>{subItem.title}</span>
+															</Link>
+														</SidebarMenuSubButton>
+													</SidebarMenuSubItem>
+												))}
+											</SidebarMenuSub>
+										</CollapsibleContent>
+									</>
+								)}
+							</SidebarMenuItem>
+						</Collapsible>
+					);
+				})}
+			</SidebarMenu>
+		</SidebarGroup>
 	);
 }
 
@@ -834,19 +951,24 @@ export default function Page({ children }: Props) {
 	const { data: auth } = api.user.get.useQuery();
 	const { data: permissions } = api.user.getPermissions.useQuery();
 	const { data: dokployVersion } = api.settings.getDokployVersion.useQuery();
+	const { data: isInstanceAdmin } = api.user.isInstanceAdmin.useQuery();
 
 	const includesProjects = pathname?.includes("/dashboard/project");
 	const { data: isCloud } = api.settings.isCloud.useQuery();
 
-	const { home: filteredHome, settings: filteredSettings } =
-		createMenuForAuthUser({
-			auth,
-			permissions,
-			isCloud: !!isCloud,
-		});
+	const {
+		home: filteredHome,
+		settings: filteredSettings,
+		admin: filteredAdmin,
+	} = createMenuForAuthUser({
+		auth,
+		permissions,
+		isCloud: !!isCloud,
+		isInstanceAdmin: !!isInstanceAdmin,
+	});
 
 	const activeItem = findActiveNavItem(
-		[...filteredHome, ...filteredSettings],
+		[...filteredHome, ...filteredSettings, ...filteredAdmin],
 		pathname,
 	);
 
@@ -882,184 +1004,19 @@ export default function Page({ children }: Props) {
 					{/* </SidebarMenuButton> */}
 				</SidebarHeader>
 				<SidebarContent>
-					<SidebarGroup>
-						<SidebarGroupLabel>Home</SidebarGroupLabel>
-						<SidebarMenu>
-							{filteredHome.map((item) => {
-								const isSingle = item.isSingle !== false;
-								const isActive = isSingle
-									? isActiveRoute({ itemUrl: item.url, pathname })
-									: item.items.some((item) =>
-											isActiveRoute({ itemUrl: item.url, pathname }),
-										);
-
-								return (
-									<Collapsible
-										key={item.title}
-										asChild
-										defaultOpen={isActive}
-										className="group/collapsible"
-									>
-										<SidebarMenuItem>
-											{isSingle ? (
-												<SidebarMenuButton
-													asChild
-													tooltip={item.title}
-													className={cn(isActive && "bg-border")}
-												>
-													<Link
-														href={item.url}
-														className="flex w-full items-center gap-2"
-													>
-														{item.icon && (
-															<item.icon
-																className={cn(isActive && "text-primary")}
-															/>
-														)}
-														<span>{item.title}</span>
-													</Link>
-												</SidebarMenuButton>
-											) : (
-												<>
-													<CollapsibleTrigger asChild>
-														<SidebarMenuButton
-															tooltip={item.title}
-															isActive={isActive}
-														>
-															{item.icon && <item.icon />}
-
-															<span>{item.title}</span>
-															{item.items?.length && (
-																<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-															)}
-														</SidebarMenuButton>
-													</CollapsibleTrigger>
-													<CollapsibleContent>
-														<SidebarMenuSub>
-															{item.items?.map((subItem) => (
-																<SidebarMenuSubItem key={subItem.title}>
-																	<SidebarMenuSubButton
-																		asChild
-																		className={cn(isActive && "bg-border")}
-																	>
-																		<Link
-																			href={subItem.url}
-																			className="flex w-full items-center"
-																		>
-																			{subItem.icon && (
-																				<span className="mr-2">
-																					<subItem.icon
-																						className={cn(
-																							"h-4 w-4 text-muted-foreground",
-																							isActive && "text-primary",
-																						)}
-																					/>
-																				</span>
-																			)}
-																			<span>{subItem.title}</span>
-																		</Link>
-																	</SidebarMenuSubButton>
-																</SidebarMenuSubItem>
-															))}
-														</SidebarMenuSub>
-													</CollapsibleContent>
-												</>
-											)}
-										</SidebarMenuItem>
-									</Collapsible>
-								);
-							})}
-						</SidebarMenu>
-					</SidebarGroup>
-					<SidebarGroup>
-						<SidebarGroupLabel>Settings</SidebarGroupLabel>
-						<SidebarMenu className="gap-1">
-							{filteredSettings.map((item) => {
-								const isSingle = item.isSingle !== false;
-								const isActive = isSingle
-									? isActiveRoute({ itemUrl: item.url, pathname })
-									: item.items.some((item) =>
-											isActiveRoute({ itemUrl: item.url, pathname }),
-										);
-
-								return (
-									<Collapsible
-										key={item.title}
-										asChild
-										defaultOpen={isActive}
-										className="group/collapsible"
-									>
-										<SidebarMenuItem>
-											{isSingle ? (
-												<SidebarMenuButton
-													asChild
-													tooltip={item.title}
-													className={cn(isActive && "bg-border")}
-												>
-													<Link
-														href={item.url}
-														className="flex w-full items-center gap-2"
-													>
-														{item.icon && (
-															<item.icon
-																className={cn(isActive && "text-primary")}
-															/>
-														)}
-														<span>{item.title}</span>
-													</Link>
-												</SidebarMenuButton>
-											) : (
-												<>
-													<CollapsibleTrigger asChild>
-														<SidebarMenuButton
-															tooltip={item.title}
-															isActive={isActive}
-														>
-															{item.icon && <item.icon />}
-
-															<span>{item.title}</span>
-															{item.items?.length && (
-																<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-															)}
-														</SidebarMenuButton>
-													</CollapsibleTrigger>
-													<CollapsibleContent>
-														<SidebarMenuSub>
-															{item.items?.map((subItem) => (
-																<SidebarMenuSubItem key={subItem.title}>
-																	<SidebarMenuSubButton
-																		asChild
-																		className={cn(isActive && "bg-border")}
-																	>
-																		<Link
-																			href={subItem.url}
-																			className="flex w-full items-center"
-																		>
-																			{subItem.icon && (
-																				<span className="mr-2">
-																					<subItem.icon
-																						className={cn(
-																							"h-4 w-4 text-muted-foreground",
-																							isActive && "text-primary",
-																						)}
-																					/>
-																				</span>
-																			)}
-																			<span>{subItem.title}</span>
-																		</Link>
-																	</SidebarMenuSubButton>
-																</SidebarMenuSubItem>
-															))}
-														</SidebarMenuSub>
-													</CollapsibleContent>
-												</>
-											)}
-										</SidebarMenuItem>
-									</Collapsible>
-								);
-							})}
-						</SidebarMenu>
-					</SidebarGroup>
+					<NavGroup label="Home" items={filteredHome} pathname={pathname} />
+					<NavGroup
+						label="Settings"
+						items={filteredSettings}
+						pathname={pathname}
+						menuClassName="gap-1"
+					/>
+					<NavGroup
+						label="Admin"
+						items={filteredAdmin}
+						pathname={pathname}
+						menuClassName="gap-1"
+					/>
 				</SidebarContent>
 				<SidebarFooter>
 					<SidebarMenu className="flex flex-col gap-2">
