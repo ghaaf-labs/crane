@@ -5,6 +5,7 @@ import {
 	findOrganizationById,
 	findUserById,
 	getDokployUrl,
+	getHostSystemInfo,
 	getUserByToken,
 	getWebServerSettings,
 	hashPassword,
@@ -273,6 +274,9 @@ export const userRouter = createTRPCRouter({
 				metricsConfig: settings?.metricsConfig,
 			};
 		},
+	),
+	getHostSystemInfo: withPermission("monitoring", "read").query(() =>
+		getHostSystemInfo(),
 	),
 	remove: protectedProcedure
 		.input(

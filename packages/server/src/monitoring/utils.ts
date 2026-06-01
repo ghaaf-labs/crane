@@ -41,6 +41,32 @@ export const buildLoadAverageStat = (
 	};
 };
 
+export interface HostSystemInfo {
+	cpuModel: string;
+	cpuCores: number;
+	arch: string;
+	platform: string;
+	release: string;
+	totalMemGb: number;
+}
+
+/**
+ * Static host hardware/OS info for the monitoring page's "System Information"
+ * card (the free host view previously lacked the context the paid dashboard
+ * shows). os.cpus()/totalmem() reflect the host even from inside the container.
+ */
+export const getHostSystemInfo = (): HostSystemInfo => {
+	const cpus = os.cpus();
+	return {
+		cpuModel: cpus[0]?.model?.trim() || "Unknown",
+		cpuCores: cpus.length,
+		arch: os.arch(),
+		platform: os.platform(),
+		release: os.release(),
+		totalMemGb: Math.round((os.totalmem() / 1024 ** 3) * 100) / 100,
+	};
+};
+
 export interface SwapStat {
 	swapTotal: number; // MB
 	swapUsed: number; // MB

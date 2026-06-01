@@ -160,6 +160,12 @@ export const ContainerFreeMonitoring = ({
 			refetchOnWindowFocus: false,
 		},
 	);
+	// Host-only static hardware/OS info (the paid dashboard shows this; the free
+	// host view did not).
+	const { data: systemInfo } = api.user.getHostSystemInfo.useQuery(undefined, {
+		enabled: appName === "dokploy",
+		refetchOnWindowFocus: false,
+	});
 	const [accumulativeData, setAccumulativeData] = useState<DockerStatsJSON>({
 		cpu: [],
 		memory: [],
@@ -258,6 +264,29 @@ export const ContainerFreeMonitoring = ({
 					</p>
 				</div>
 			</header>
+
+			{appName === "dokploy" && systemInfo && (
+				<Card className="bg-background">
+					<CardContent className="flex flex-wrap gap-x-8 gap-y-2 p-4 text-sm">
+						<div className="flex flex-col">
+							<span className="text-xs text-muted-foreground">CPU</span>
+							<span className="font-medium">
+								{systemInfo.cpuModel} · {systemInfo.cpuCores} cores
+							</span>
+						</div>
+						<div className="flex flex-col">
+							<span className="text-xs text-muted-foreground">Memory</span>
+							<span className="font-medium">{systemInfo.totalMemGb} GB</span>
+						</div>
+						<div className="flex flex-col">
+							<span className="text-xs text-muted-foreground">Platform</span>
+							<span className="font-medium">
+								{systemInfo.platform} {systemInfo.release} ({systemInfo.arch})
+							</span>
+						</div>
+					</CardContent>
+				</Card>
+			)}
 
 			<div className="grid gap-6 lg:grid-cols-2">
 				<Card className="bg-background">

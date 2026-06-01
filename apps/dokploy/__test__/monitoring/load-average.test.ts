@@ -1,5 +1,6 @@
 import {
 	buildLoadAverageStat,
+	getHostSystemInfo,
 	parseSwapFromMeminfo,
 } from "@crane/server/monitoring/utils";
 import { describe, expect, it } from "vitest";
@@ -78,5 +79,19 @@ describe("parseSwapFromMeminfo", () => {
 		// free is clamped to total (1024 kB → 1 MB), not left as the raw 2 MB
 		expect(swap?.swapFree).toBe(1);
 		expect(swap?.swapTotal).toBe(1);
+	});
+});
+
+describe("getHostSystemInfo", () => {
+	it("returns a well-formed host info object from the OS", () => {
+		const info = getHostSystemInfo();
+		expect(typeof info.cpuModel).toBe("string");
+		expect(info.cpuModel.length).toBeGreaterThan(0);
+		expect(info.cpuCores).toBeGreaterThan(0);
+		expect(Number.isInteger(info.cpuCores)).toBe(true);
+		expect(typeof info.arch).toBe("string");
+		expect(typeof info.platform).toBe("string");
+		expect(typeof info.release).toBe("string");
+		expect(info.totalMemGb).toBeGreaterThan(0);
 	});
 });
