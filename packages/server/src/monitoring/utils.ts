@@ -111,12 +111,14 @@ export interface HostSystemInfo {
 	platform: string;
 	release: string;
 	totalMemGb: number;
+	uptimeSeconds: number;
 }
 
 /**
  * Static host hardware/OS info for the monitoring page's "System Information"
  * card (the free host view previously lacked the context the paid dashboard
- * shows). os.cpus()/totalmem() reflect the host even from inside the container.
+ * shows). os.cpus()/totalmem()/uptime() reflect the host even from inside the
+ * container.
  */
 export const getHostSystemInfo = (): HostSystemInfo => {
 	const cpus = os.cpus();
@@ -127,6 +129,7 @@ export const getHostSystemInfo = (): HostSystemInfo => {
 		platform: os.platform(),
 		release: os.release(),
 		totalMemGb: Math.round((os.totalmem() / 1024 ** 3) * 100) / 100,
+		uptimeSeconds: Math.max(0, Math.floor(os.uptime())),
 	};
 };
 

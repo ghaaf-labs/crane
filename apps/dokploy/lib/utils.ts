@@ -120,6 +120,24 @@ export function formatNetworkRate(bytesPerSecond: number): string {
 	return `${value.toFixed(decimals)} ${units[unitIndex]}`;
 }
 
+/**
+ * Format a host uptime (seconds) as a compact human string: "5d 3h 12m",
+ * "3h 12m", "12m", or "<1m". Lives in the client utils (not @crane/server) so it
+ * can be used in the browser bundle without pulling native server deps.
+ */
+export function formatUptime(seconds: number): string {
+	if (!Number.isFinite(seconds) || seconds < 60) return "<1m";
+	const totalMinutes = Math.floor(seconds / 60);
+	const days = Math.floor(totalMinutes / (60 * 24));
+	const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+	const minutes = totalMinutes % 60;
+	const parts: string[] = [];
+	if (days > 0) parts.push(`${days}d`);
+	if (hours > 0) parts.push(`${hours}h`);
+	if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`);
+	return parts.join(" ");
+}
+
 export function getFallbackAvatarInitials(
 	fullName: string | undefined,
 ): string {

@@ -3,8 +3,31 @@ import {
 	bytesFromDockerSize,
 	bytesFromSizeString,
 	formatNetworkRate,
+	formatUptime,
 	networkRatePerSecond,
 } from "@/lib/utils";
+
+describe("formatUptime", () => {
+	it("formats days, hours, and minutes", () => {
+		expect(formatUptime(5 * 86400 + 3 * 3600 + 12 * 60)).toBe("5d 3h 12m");
+	});
+
+	it("omits zero leading units", () => {
+		expect(formatUptime(3 * 3600 + 12 * 60)).toBe("3h 12m");
+		expect(formatUptime(12 * 60)).toBe("12m");
+	});
+
+	it("drops a trailing zero-minute when days/hours are present", () => {
+		expect(formatUptime(2 * 86400)).toBe("2d");
+		expect(formatUptime(3 * 3600)).toBe("3h");
+	});
+
+	it("shows <1m for sub-minute or non-finite uptimes", () => {
+		expect(formatUptime(0)).toBe("<1m");
+		expect(formatUptime(59)).toBe("<1m");
+		expect(formatUptime(Number.NaN)).toBe("<1m");
+	});
+});
 
 describe("networkRatePerSecond", () => {
 	it("computes throughput from a cumulative counter delta", () => {

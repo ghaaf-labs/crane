@@ -133,5 +133,7 @@ describe("getHostSystemInfo", () => {
 		expect(typeof info.platform).toBe("string");
 		expect(typeof info.release).toBe("string");
 		expect(info.totalMemGb).toBeGreaterThan(0);
+		expect(Number.isInteger(info.uptimeSeconds)).toBe(true);
+		expect(info.uptimeSeconds).toBeGreaterThanOrEqual(0);
 	});
 });

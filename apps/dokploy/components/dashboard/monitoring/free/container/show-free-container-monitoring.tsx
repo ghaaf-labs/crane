@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { formatUptime } from "@/lib/utils";
 import { api } from "@/utils/api";
 import { DockerBlockChart } from "./docker-block-chart";
 import { DockerCpuChart } from "./docker-cpu-chart";
@@ -298,6 +299,12 @@ export const ContainerFreeMonitoring = ({
 							<span className="text-xs text-muted-foreground">Platform</span>
 							<span className="font-medium">
 								{systemInfo.platform} {systemInfo.release} ({systemInfo.arch})
+							</span>
+						</div>
+						<div className="flex flex-col">
+							<span className="text-xs text-muted-foreground">Uptime</span>
+							<span className="font-medium">
+								{formatUptime(systemInfo.uptimeSeconds)}
 							</span>
 						</div>
 					</CardContent>
